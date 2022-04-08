@@ -1,0 +1,26 @@
+{
+  "timeZone": "Asia/Jerusalem",
+  "dependencies": {
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Drive",
+        "serviceId": "drive",
+        "version": "v2"
+      }
+    ]
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "sheets": {
+    "macros": [
+      {
+        "menuName": "Untitled macro",
+        "functionName": "Untitledmacro"
+      },
+      {
+        "menuName": "Untitled macro",
+        "functionName": "Untitledmacro"
+      }
+    ]
+  }
+}
