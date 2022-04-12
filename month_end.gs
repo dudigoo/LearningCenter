@@ -4,6 +4,7 @@ log_row=3;
 var ma_ss;
 var ma_ss_id;
 var g_editors=['mlemida.ryam@gmail.com','dudigoo@gmail.com'];
+var tete;
 
 var wfolders = [];
 var gp={};
