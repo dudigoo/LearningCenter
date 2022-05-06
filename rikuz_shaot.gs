@@ -3,6 +3,10 @@ var month_row = { 9 : 3, 10 : 4 , 11 : 5, 12 : 6 , 1 : 7, 2 : 8 , 3 : 9 , 4 : 10
 
 function updateRikuz(name, hours, snm, monthnum) {
   //Logger.log('updateRikuz hours='+ hours + ' name='+name + ' snm='+snm + ' monthnum='+monthnum);
+  if (! month_row[monthnum]){
+    writeLog('invalid month number for: '+name);
+    return;
+  }
   var found=0;
   var max_wrkrs=gp.rikuz_wrkrs[0].length;
   for (var i=0; i<max_wrkrs; i++){
@@ -11,8 +15,7 @@ function updateRikuz(name, hours, snm, monthnum) {
       var snum=1;
       if (snm == 'merkaz'){
         snum=0;
-        var row=gp.rikuz_dat[snum][month_row[monthnum]-3];
-        //Logger.log('len='+gp.rikuz_dat[snum].length + ' i='+i + ' hours=' + hours+ ' monthnum=' + monthnum+ ' snum=' + snum);
+        //Logger.log('name='+name+' len='+gp.rikuz_dat[snum].length + ' i='+i + ' hours=' + hours+ ' monthnum=' + monthnum+ ' snum=' + snum);
         //Logger.log( ' month_row[monthnum]=' + month_row[monthnum]);
         var oldval=gp.rikuz_dat[snum][month_row[monthnum]-3][i]; 
         //g_rikuz_sheet[snm].getRange(month_row[monthnum],i).getValue();
@@ -26,7 +29,13 @@ function updateRikuz(name, hours, snm, monthnum) {
     }
   }
   if (found==0){
-    //writeLog('name='+name + ' hours=' + hours + ' not found in rikuz...');
+    if (! gp.rikuz_nms_not_found){
+      gp.rikuz_nms_not_found={};
+    }
+    if (! gp.rikuz_nms_not_found[name]){
+      gp.rikuz_nms_not_found[name]=1;
+      writeLog('name='+name + ' hours=' + hours + ' not found in rikuz...');
+    }
   }
 }
 
@@ -47,7 +56,7 @@ function loadRikuzData() {
   gp.rikuz_wrkrs=gp.rikuz_sheets[0].getRange(2,3,1,lcol).getValues();
   gp.rikuz_dat=[]; gp.rikuz_manual_dat=[]; gp.rikuz_dat_rng=[]; gp.rikuz_dat_keep=[]; gp.rikuz_dat_keep_rng=[];
   for (var i=0;i<2;i++){
-    gp.rikuz_dat_keep_rng.push(gp.rikuz_sheets[i].getRange('CB3:CB14'));// 76 , 86
+    gp.rikuz_dat_keep_rng.push(gp.rikuz_sheets[i].getRange('DA3:DA14'));// 76 , 86
     gp.rikuz_dat_keep.push(gp.rikuz_dat_keep_rng[i].getFormulas());
     Logger.log('load gp.rikuz_dat_keep[i]='+gp.rikuz_dat_keep[i]);
     gp.rikuz_dat_rng.push(gp.rikuz_sheets[i].getRange(3,3,12,lcol));
@@ -84,12 +93,15 @@ function rikuzMain() {
   loadRikuzData();
   var hfiles=getSubFoldersFiles(gp.top_accounting_dir_id,'rikuz');
   var ta={};
-  loadManualReports(ta);
+  if (gp.rikuz_add_manual_hours == 'y'){
+    loadManualReports(ta);
+  }
   for (var i=0; i<hfiles.length; i++){
     processHfile(hfiles[i], ta);
   }
   for (const [wrkr, wrkh] of Object.entries(ta)) {
     for (const [month, h] of Object.entries(wrkh)) { 
+      //Logger.log('wrkr='+wrkr+' month='+month);
       updateRikuz(wrkr, h, 'merkaz', month);
     }
   }
@@ -158,7 +170,8 @@ function processHfile(ss,ta) {
       ta[wrkrnm]={};
     }
     var ts=getHTotalHours(shts[i],ta[wrkrnm]);
-    //Logger.log('wrkrnm='+wrkrnm+ ' ta='+JSON.stringify(ta)) //mmm
+    //Logger.log( ' ta='+JSON.stringify(ta)) //mmm
+    //Logger.log('acc_mon_num='+acc_mon_num+' wrkrnm='+wrkrnm) //mmm
     updateRikuz(wrkrnm, ts, 'accounting', acc_mon_num);
   }
 }
@@ -177,19 +190,32 @@ function getHTotalHours(tsheet,tw){
     ratio=total_sheetac/total_sheet;
     total_sheet=total_sheetac;
   }
+  let sheet_total=0;
   var prev_date;
+  var prev_subj='';
   //Logger.log('getHTotalHours: trow='+ trow +' name='+tsheet.getName()+' total_sheet='+total_sheet+ ' total_sheetac='+total_sheetac);
   var sha=tsheet.getRange(8, 2,trow-8,6).getValues();
   for (var i=0; i < trow-8; i++) {
-
+    //prev dt and subj
+    if (! sha[i][5]){
+      sha[i][5]=prev_subj;
+    }
+    prev_subj=sha[i][5];
     var dt1=sha[i][0];//tsheet.getRange(i, 2).getValue();
     dt1 = dt1 ? dt1 : prev_date;
     prev_date=dt1;
     var dt= new Date(dt1);
     var mon=(dt.getMonth()+1).toString();
-    if (gp.rikuz_subjects && ! gp.rikuz_subjects_ar.includes(sha[i][5]) ) {
-      continue;
+    // filter
+    if (gp.rikuz_subjects ) {
+      if (gp.rikuz_subjects_omit != 'y' && ! gp.rikuz_subjects_ar.includes(sha[i][5]) ) {
+        continue;
+      }
+      if (gp.rikuz_subjects_omit == 'y' && gp.rikuz_subjects_ar.includes(sha[i][5]) ) {
+        continue;
+      }
     }
+    //add hours
     var hrs;
     hrs=sha[i][3];//tsheet.getRange(i, 5).getValue();
     if (hrs){
@@ -197,13 +223,15 @@ function getHTotalHours(tsheet,tw){
         tw[mon]=0;
       }
       tw[mon] += hrs*ratio;
+      sheet_total+=hrs;
       //Logger.log('hours='+ hrs + ' mon='+mon+ ' row='+i+ ' dt1='+dt1+' prev_date='+prev_date+' tw='+JSON.stringify(tw)); //mmm
     }
     //Logger.log('hours='+ hrs + ' mon='+mon+ ' row='+i+ ' dt1='+dt1+' tw='+JSON.stringify(tw)); //mmm
     //Logger.log('hrs='+ hrs + ' total='+total+ ' row='+i+ ' dt1='+dt1+' month='+mon);
   }
   //Logger.log('getHTotalHours: total_sheet='+ total_sheet + ' tw='+JSON.stringify(tw)); //mmm
-  return total_sheet;
+  return Math.round(sheet_total*ratio);
+  //return total_sheet;
 }
  
 function rikuz2pikuach() {

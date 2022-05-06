@@ -147,7 +147,12 @@ function collectParams(col) {
   gp.rikuz_wrkrs_filter = params[16][0];
   gp.rikuz_wrkrs_filter_ar=gp.rikuz_wrkrs_filter.split(',');
   gp.g_month_name_ar=gp.g_month_name.split(',');
-  gp.hours_master_id = params[17][0];
+  //gp.hours_master_id = params[17][0];
+  gp.rikuz_subjects = params[17][0];
+  //gp.rikuz_subjects = params[27][0];
+  if (gp.rikuz_subjects){
+    gp.rikuz_subjects_ar=gp.rikuz_subjects.split(',');
+  }
   gp.wrkrs_row_str = params[19][0];
 
   gp.pupil_alfon_id = params[20][0];
@@ -155,15 +160,12 @@ function collectParams(col) {
   gp.nizul_tgt = params[22][0];
   gp.shibutz_tmplts = params[23][0];
 
-  gp.shibutz_hist_id = params[18][0];
+  gp.rikuz_subjects_omit = params[18][0];
   gp.shib_days_cycle = params[24][0];
   gp.shibutz_mail_to = params[25][0];
   gp.mashov_scores_dir_id = params[26][0];
-  gp.rikuz_subjects = params[27][0];
-  if (gp.rikuz_subjects){
-    gp.rikuz_subjects_ar=gp.rikuz_subjects.split(',');
-  }
-  gp.ab_file_d = params[28][0];
+  gp.hours_master_id = params[27][0];
+  gp.rikuz_add_manual_hours = params[28][0];
   gp.ab_last_dt = params[29][0];
   //gp.dates_dmy_fmt = (gp.scripts_ss.getSpreadsheetLocale() == 'iw_IL') ? 'y' : '';
  

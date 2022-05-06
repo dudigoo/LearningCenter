@@ -44,7 +44,6 @@ function sendReminderMain() {
 function clearShibutzDates() {
   let shib_ss=getShibutzSS();
   getRecurSh().showSheet();
-  //var ss_hist=SpreadsheetApp.openById(gp.shibutz_hist_id);
   let dts=gp.shib_dates.split(",");
   let sha=shib_ss.getSheets();
   for (var i=0;i<sha.length;i++){
@@ -319,7 +318,7 @@ function getShibRecurAr() {
   if (! gp.shib_recur_ar){
     let rows=getRecurSh().getLastRow();
     if (rows>1){
-      gp.shib_recur_ar=getRecurSh().getRange(2,1,rows-1,16).getValues();
+      gp.shib_recur_ar=getRecurSh().getRange(2,1,rows-1,18).getValues();
       gp.shib_recur_dat_rng_ar=[];
       Logger.log('loaded recur');
     } else {
@@ -329,18 +328,42 @@ function getShibRecurAr() {
   return gp.shib_recur_ar;
 }
 
-function addRecurring(sh,dow,ss) {
-  for (let i=0;i<getShibRecurAr().length;i++){
-    //Logger.log('i='+i+ 'shib_recur_ar[i]='+getShibRecurAr()[i]);
-    let recdow=getShibRecurAr()[i][0];
+function addRecurring(sh,dt,ss) {
+  let dow=dt.getDay();
+  let leng=getShibRecurAr().length;
+  for (let i=0;i<leng;i++){
+    let recur_row=getShibRecurAr()[i];
+    //Logger.log('i='+i+ 'shib_recur_ar[i]='+recur_row);
+    let recdow=recur_row[0];
     //Logger.log('dow='+ dow+ ' recdow='+recdow+ ' dowmap[dow]='+dowmap[dow]);
-    if (recdow == dowmap[dow]){
+    if (recdow == dowmap[dow] && isDtInRng(dt,recur_row[16],recur_row[17]), i){
       //Logger.log('recdow == dowmap[dow]');
-      let rka = getShibRecurAr()[i].slice(1,4);
+      let rka = recur_row.slice(1,4);
       let rd=getRecurRowDat(i);
       setRecurMeet(sh,rka,rd,i+2);
     }
   }
+  if (gp.shib_recur_rows2delete){
+    //gp.shib_recur_rows2delete.sort;
+    for (let i=gp.shib_recur_rows2delete.length -1; i>=0; i--){
+      getRecurSh().deleteRow(gp.shib_recur_rows2delete[i]+2);
+    }
+  }
+}
+
+function isDtInRng(dt,rngb,rnge,row) {
+  //Logger.log('dt='+dt+ ' rngb='+rngb+' rnge='+rnge);
+  if (rngb && dt.getTime()<rngb.getTime()){
+    return 0;
+  }
+  if (rnge && dt.getTime()>rnge.getTime()){// period over. remember to delete row
+    if (!gp.shib_recur_rows2delete){
+      gp.shib_recur_rows2delete=[];
+    }
+    gp.shib_recur_rows2delete.push(row);
+    return 0;
+  }
+  return 1;
 }
 
 function setRecurMeet(sh,rec,rd,rrow) {
@@ -415,7 +438,7 @@ function fillShibDt(date,dt_sh, shib_ss) {
   Logger.log('s sheetProtection 4');
   sheetProtection(dt_sh,4);
   Logger.log('s addRecurring');
-  addRecurring(dt_sh,dow,shib_ss);
+  addRecurring(dt_sh,dt,shib_ss);
   var old_sh=shib_ss.getSheetByName(shnm);
   if (old_sh){
     Logger.log('s sheetProtection 2');
@@ -509,7 +532,8 @@ function sortWrkr(sh){
 
 function clearDupRows(sh){
   var last_row=sh.getLastRow();
-  var ra=sh.getRange(2,1,last_row-1,1).setFontColor('#d9d9d9').getValues();
+  var ra=sh.getRange(2,1,last_row-1,1).setFontColor('#999999').getValues();
+  //var ra=sh.getRange(2,1,last_row-1,1).setFontColor('#d9d9d9').getValues();
   var prev='';
   //return;
   //Logger.log('s clearDupRows');
@@ -910,7 +934,8 @@ function getPupRows(nm,targetSheet) {
   //query = 'select A, B, E, C, F where (I matches "'+nm+'" or J matches "'+nm+'" or K matches "'+nm+'" or L matches "'+nm+'" or M matches "'+nm+'" or N matches "'+nm+'" or O matches "'+nm+'") ';  
   //xquery = 'select A, B, E, C, F where (I matches "'+nm+'" or J matches "'+nm+'" or K matches "'+nm+'" or L matches "'+nm+'")';  
   //query = 'select A, B, C, F, D, G where (J matches "'+nm+'" or K matches "'+nm+'" or L matches "'+nm+'" or M matches "'+nm+'")';  
-  query = 'select A, B, C, F, D, G where (R matches ".*,('+nm+'),.*")';  
+  //query = 'select A, B, C, F, D, G where (R matches ".*,('+nm+'),.*")';  
+  query = 'select A, B, C, F, D, G where (T matches ".*,('+nm+'),.*")';  
   Logger.log('query= '+query);
   let values=[];
   for (let i=0;i<targetSheet.length;i++){
@@ -963,7 +988,7 @@ function collectDatesMetaAr(dts, ar) {
     let rows=sh.getLastRow()-1;//=ARRAYFORMULA('1 27/3/22'!A2:Q)
     let dt=dts[i].replace(/\d /,'');//tabname
     let f1='=ARRAYFORMULA({"'+dts[i]+'"&Y1:Y'+rows+"})";  //=ArrayFormula({"27/3/22"&Y2:Y500})
-    let f2="=ARRAYFORMULA('"+dts[i]+"'!A2:P"+(rows+1)+")";
+    let f2="=ARRAYFORMULA('"+dts[i]+"'!A2:R"+(rows+1)+")";
     //Logger.log('collect rows='+rows+' row2set='+row2set+' dt='+dt+' shnm='+sh.getName());
     ar.push([row2set,rows,f1,f2]);
     row2set+=rows;
@@ -988,7 +1013,7 @@ function updateAllDatesSheet(ar) {
   rng.setValues(rng_ar);
   let c='=ARRAYFORMULA("," & J2:J'+newlr+' & "," & K2:K'+newlr+' & "," & L2:L'+newlr+' & "," & M2:M'+newlr+' & "," & N2:N'+newlr+' & "," & O2:O'+newlr+' & "," & P2:P'+newlr+' & ",")';
   //=arrayformula("," & J2:J871 & "," & K2:K871 & "," & L2:L871 & "," & M2:M871 & "," & N2:N871 & "," & O2:O871 & "," & P2:P871 & ",")
-  sh.getRange('R2').setValue(c);
+  sh.getRange('T2').setValue(c);
 }
 
 function sendMeetingReminderMain() {
