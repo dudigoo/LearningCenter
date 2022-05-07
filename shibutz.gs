@@ -131,6 +131,7 @@ function shibutzDates(shib_ss) {
   orderShibSheets(shib_ss);
   updateAllDatesSheetWork();
   Logger.log('E orderShibSheets');
+  deleteObsoleteRecurRows();
 }
 
 function orderShibSheets(ss) { 
@@ -330,37 +331,47 @@ function getShibRecurAr() {
 
 function addRecurring(sh,dt,ss) {
   let dow=dt.getDay();
+  //Logger.log('addRecuring dt='+dt);
   let leng=getShibRecurAr().length;
   for (let i=0;i<leng;i++){
     let recur_row=getShibRecurAr()[i];
     //Logger.log('i='+i+ 'shib_recur_ar[i]='+recur_row);
     let recdow=recur_row[0];
     //Logger.log('dow='+ dow+ ' recdow='+recdow+ ' dowmap[dow]='+dowmap[dow]);
-    if (recdow == dowmap[dow] && isDtInRng(dt,recur_row[16],recur_row[17]), i){
+    if ((recdow == dowmap[dow]) && isDtInRng(dt,recur_row[16],recur_row[17])){
       //Logger.log('recdow == dowmap[dow]');
       let rka = recur_row.slice(1,4);
       let rd=getRecurRowDat(i);
       setRecurMeet(sh,rka,rd,i+2);
     }
   }
-  if (gp.shib_recur_rows2delete){
-    //gp.shib_recur_rows2delete.sort;
-    for (let i=gp.shib_recur_rows2delete.length -1; i>=0; i--){
-      getRecurSh().deleteRow(gp.shib_recur_rows2delete[i]+2);
+}
+
+function deleteObsoleteRecurRows() {
+  let yest=new Date();
+  yest.setDate(yest.getDate() - 1);
+  let recur_rows2delete=[];
+  let leng=getShibRecurAr().length;
+  for (let i=0;i<leng;i++){
+    let recur_row=getShibRecurAr()[i];
+    Logger.log('recdow == dowmap[dow]');
+    if (recur_row[17] && yest.getTime()>recur_row[17].getTime()){
+      recur_rows2delete.push(i+2);
     }
+  }
+  Logger.log('recur_rows2delete='+recur_rows2delete);
+  for (let i=recur_rows2delete.length -1; i>=0; i--){
+    Logger.log('i='+i+ ' recur_rows2delete[i]='+(recur_rows2delete[i]));
+    getRecurSh().deleteRow(recur_rows2delete[i]);
   }
 }
 
-function isDtInRng(dt,rngb,rnge,row) {
+function isDtInRng(dt,rngb,rnge) {
   //Logger.log('dt='+dt+ ' rngb='+rngb+' rnge='+rnge);
   if (rngb && dt.getTime()<rngb.getTime()){
     return 0;
   }
   if (rnge && dt.getTime()>rnge.getTime()){// period over. remember to delete row
-    if (!gp.shib_recur_rows2delete){
-      gp.shib_recur_rows2delete=[];
-    }
-    gp.shib_recur_rows2delete.push(row);
     return 0;
   }
   return 1;
@@ -977,7 +988,7 @@ function updateAllDatesSheetWork() {
   let dts=getDtsOfSheetsToWorkOn(10,1,1);
   let ar=[];
   collectDatesMetaAr(dts,ar);
-  Logger.log('ar='+JSON.stringify(ar));
+  //Logger.log('ar='+JSON.stringify(ar));
   updateAllDatesSheet(ar);
 }
 
@@ -998,7 +1009,7 @@ function collectDatesMetaAr(dts, ar) {
 function updateAllDatesSheet(ar) {
   let sh=getShibutzSS().getSheetByName('allDays');
   sh.getRange(2,1,sh.getLastRow(),2).clear({ contentsOnly: true });
-  Logger.log('upd ar='+JSON.stringify(ar));
+  //Logger.log('upd ar='+JSON.stringify(ar));
   let lr=ar[ar.length-1][0];
   let newlr=lr + ar[ar.length-1][1] -1;
   let rng=sh.getRange(2,1,lr-1,2);

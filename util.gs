@@ -1,16 +1,15 @@
-q={};
-//import * as lu from 'lux.js';
+
 function tst5() {
   //var lastUpdated = DriveApp.getFileById('1YP5aziOBgpzO1GS35z3yhY2op0qXdz2W').getLastUpdated();
   collectParams();
-  let query = 'select A,B where 1=1 limit 10'
+  let query = deleteObsoleteRecurRows();
   //let a=querySheet2(query,'1yrL132sLyUUzRruG5EzivGOk8uC88p7KPRC9NwAWI6A','groupPupil');
   //    Logger.log('a:'+a);
-  let d=SpreadsheetApp.openById('1aYDdx3zTQ2__HkRJIoK1NVnkzVzUf_KwzjPOtoE05BI').getSheetByName('recur').getRange(2,17,1,2).getValues()[0];
+  //let d=SpreadsheetApp.openById('1aYDdx3zTQ2__HkRJIoK1NVnkzVzUf_KwzjPOtoE05BI').getSheetByName('recur').getRange(2,17,1,2).getValues()[0];
 
-  let dt=getDtObj('25/4/22');
-  let x=isDtInRng(dt,d[0],d[1]);
-  Logger.log('x='+JSON.stringify(x));
+  //let dt=getDtObj('25/4/22');
+  //let x=isDtInRng(dt,d[0],d[1]);
+  //Logger.log('x='+JSON.stringify(x));
  // d.setDate( d.getDate()+7)
   //Logger.log('d1='+d);
   //Logger.log('dx='+getYMDStr(d));
