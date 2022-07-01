@@ -207,7 +207,7 @@ function sheetProtection(sh,type) {//1=editable hour report 2=view only 3=invisi
     p.setUnprotectedRanges(edit_rngs);
   } else if (type==4) {
     var p=sh.protect();
-    var edit_rngs=[sh.getRange('E2:P'+lr)];
+    var edit_rngs=[sh.getRange('E2:Q'+lr)];
     p=p.removeEditors(p.getEditors()).addEditors(g_editors);
     p.setUnprotectedRanges(edit_rngs);    
   } else if (type==2) {

@@ -1,10 +1,22 @@
 
+  async function getAccountId() { /* ... */ }
+  async function getAvailableNumbers(accountId) { /* ... */ }
+  async function buyPhoneNumber(accountId, number) { /* ... */ }
+  async function sendSMS(accountId, phoneId, to, msg) { /* ... */ }
+  async function deletePhoneNumber(accountId, phoneNumberId) { /* ... */ }
 function tst5() {
-  //var lastUpdated = DriveApp.getFileById('1YP5aziOBgpzO1GS35z3yhY2op0qXdz2W').getLastUpdated();
+let t='4 15/6/22';
+  let dts=SpreadsheetApp.openById('1SXIOfVl9K4eagWJ8HgcXAR2GAnRIh5IqT_4ptkJAHO4').getSheetByName('Form responses 1').getRange("K6").getValue();
+  let dt=new Date('7/4/22');
+  //let dts='3/7/22,10/7/22,20/7/22';
+  let x=isDtInRange(dt,0,0,dts);
+  Logger.log('x='+x);
+   return;
+  //Logger.log('d1='+d);return;
   collectParams();
-  let query = deleteObsoleteRecurRows();
+  let a = getMeetingsWithRemind();
   //let a=querySheet2(query,'1yrL132sLyUUzRruG5EzivGOk8uC88p7KPRC9NwAWI6A','groupPupil');
-  //    Logger.log('a:'+a);
+   Logger.log('a:'+JSON.stringify(a));
   //let d=SpreadsheetApp.openById('1aYDdx3zTQ2__HkRJIoK1NVnkzVzUf_KwzjPOtoE05BI').getSheetByName('recur').getRange(2,17,1,2).getValues()[0];
 
   //let dt=getDtObj('25/4/22');

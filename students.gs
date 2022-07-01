@@ -182,7 +182,7 @@ function convertXlsx2sheets(folder) {
 
 }
 // for quiz triggers
-function setQuiztriggersMain() {
+/*function setQuiztriggersMain() {
   collectParams();
   var files=getSubFoldersFiles('1YP5aziOBgpzO1GS35z3yhY2op0qXdz2W');
   for (let i=0;i<files.length;i++){
@@ -207,7 +207,7 @@ function setSubmitTrigger(ss) {
   } catch(err) {
     Logger.log('err='+err);
   }
-}
+}*/
 
 function handleQuizResponse(e) {
   // editable response, add code and lib to sheet
@@ -217,6 +217,7 @@ function handleQuizResponse(e) {
   let formsh=ss.getSheets()[0];
   let rownum=e.range.getRow();
   let vals=formsh.getRange(rownum,1,1,3).getDisplayValues()[0];
+  let vals2=formsh.getRange(rownum,1,1,3).getValues()[0];
   //Logger.log('vals='+vals);
   let furl=ss.getFormUrl();
   let form = FormApp.openByUrl(furl);
@@ -227,11 +228,22 @@ function handleQuizResponse(e) {
     return;
   }
   let responses = form.getResponses();
-  let resp_url=responses[responses.length - 1].getEditResponseUrl();
+  //let resp_url=responses[responses.length - 1].getEditResponseUrl();
+  let resp_url=findResponseUrl(responses,vals2[0].setMilliseconds(0));
   let row=[vals[2], vals[0], form_nm, vals[1], resp_url, furl ]
   //Logger.log('row='+row);
   sh=getMaakavSS().getSheetByName('allQuiz');
   sh.appendRow(row);
+}
+
+function findResponseUrl(responses,times) {
+  for (let i = responses.length-1; i >=0; i--) {
+    //Logger.log('i='+i+' responses[i].getTimestamp()='+responses[i].getTimestamp()+' times='+times);
+    if (responses[i].getTimestamp().setMilliseconds(0) == times){
+      return responses[i].getEditResponseUrl();
+    }
+  }
+  Logger.log('didnt find response for vals='+vals);
 }
 
 function getPupilByMail(mail) {

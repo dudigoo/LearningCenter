@@ -156,7 +156,7 @@ function addWorker(wrkr) {
   } else {
     writeLog('no hour report for worker type '+wtp);
   } 
-
+  if (wtp != 'ח'){
     try {
       Logger.log('viewer mail='+ wrkr.mail + ' fname='+get_shared_dir().getName());
       get_shared_dir().addViewer(wrkr.mail);   
@@ -164,7 +164,7 @@ function addWorker(wrkr) {
     } catch (e) {
       writeLog('addViewer err. e=' + e);
     }
-  
+  }
   writeLog('Done='+wrkr.name);
 }
 
@@ -457,9 +457,9 @@ function addAbsentStuRow(){
     //SpreadsheetApp.getUi().alert(meeting_details.msg);
     return;
   }
-  Logger.log('meeting_details'+JSON.stringify(meeting_details));
+  //Logger.log('meeting_details'+JSON.stringify(meeting_details));
   let reg=getStuRegis2Meeting(meeting_details);
-  Logger.log('reg='+JSON.stringify(reg));
+  //Logger.log('reg='+JSON.stringify(reg));
   if (reg.sts=='er'){
     writeMsgInActivity(meeting_details, reg.msg);
     //SpreadsheetApp.getUi().alert(reg.msg);
@@ -479,6 +479,7 @@ function addAbsentStuRow(){
 
 
 function writeMsgInActivity(meeting_details,msg){
+  Logger.log('msg='+msg);
   meeting_details.sh.getRange(meeting_details.row_num2upd, 9 ).setValue(msg);
 }
 
@@ -494,11 +495,12 @@ function getStuRegis2Meeting(md){
     //q='select J,K,L,M,N,O,P where D="'+md.tname+'" and B="' + md.row2add[2] +'" and C="' + md.row2add[3] +'" and A = "'+ str + '"';
   }
   let vals=querySheet(q, gp.shibutz_file_id, md.sh2look);
-  Logger.log('sched='+JSON.stringify(vals));
+  //Logger.log('sched='+JSON.stringify(vals));
   if (! vals.length){
     return {'sts':'er','msg':'Lesson from above row not found in schedule'}
   }
   expandGroup2members(vals,1,0,7);
+  //Logger.log('sched2='+JSON.stringify(vals));
   return {sts:'ok', 'names': chomp(vals[0][0]).split(',')};
 }
 
@@ -506,12 +508,14 @@ function getSelectedMeetingDetails(){
   let ret={};
   md=[];
   ret.tname=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('name').getRange(2,2).getValue();
-  //ret.tname='שלומית משל';
+  //ret.tname='חוה העוגן';
   ret.sh=SpreadsheetApp.getActiveSheet();
+  //ret.sh=SpreadsheetApp.openById('1z-nFGcmf9_ip6n-GawTYlF8g_GujrOQdaHGIZuLWENw').getSheetByName('16.4-15.5');
   let selection = ret.sh.getSelection();
   let srng =  selection.getActiveRangeList().getRanges()[0];
   //Logger.log('srng.getRow()='+srng.getRow()+' shnm'+ret.sh.getName());
   ret.row_num2upd=srng.getRow();
+  //ret.row_num2upd=26;
   if (ret.row_num2upd<9){
     return {'sts':'er','msg':'invalid cell selected. Select a cell in the row to fill'}
   }
@@ -528,8 +532,8 @@ function getSelectedMeetingDetails(){
     }
   }
   for (let i=w_ar.length-1;i>=0;i--){// while date/time empty or changes
-    Logger.log('i='+i+' w_ar[i]='+JSON.stringify(w_ar[i]));
-    Logger.log(' md='+JSON.stringify(md));
+    //Logger.log('i='+i+' w_ar[i]='+JSON.stringify(w_ar[i]));
+    //Logger.log(' md='+JSON.stringify(md));
     if ( (md[1] && (w_ar[i][1].getTime() != md[1].getTime())) ||  (md[2] && (w_ar[i][2] != md[2])) ){
       Logger.log('break');
       break;

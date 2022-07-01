@@ -140,7 +140,10 @@ function collectParams(col) {
   gp.maakav_file_id = params[11][0];
   gp.wrkrs_ss_id = params[12][0];
 
-  gp.ab_sun_dt = params[13][0];
+  gp.rikuz_grade_filter = params[13][0];
+  if (gp.rikuz_grade_filter){
+    gp.rikuz_grade_filter_ar=gp.rikuz_grade_filter.split(',');
+  }
   gp.top_accounting_dir_id = params[14][0];
   //Logger.log('A: g_top_accounting_dir_id='+g_top_accounting_dir_id );
   gp.rikuz_file_id = params[15][0];
@@ -165,8 +168,8 @@ function collectParams(col) {
   gp.shibutz_mail_to = params[25][0];
   gp.mashov_scores_dir_id = params[26][0];
   gp.hours_master_id = params[27][0];
-  gp.rikuz_add_manual_hours = params[28][0];
-  gp.ab_last_dt = params[29][0];
+  //Logger.log('pms='+params[29]);
+  //gp.ab_last_dt = params[29][0];
   //gp.dates_dmy_fmt = (gp.scripts_ss.getSpreadsheetLocale() == 'iw_IL') ? 'y' : '';
  
 }

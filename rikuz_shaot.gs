@@ -56,7 +56,7 @@ function loadRikuzData() {
   gp.rikuz_wrkrs=gp.rikuz_sheets[0].getRange(2,3,1,lcol).getValues();
   gp.rikuz_dat=[]; gp.rikuz_manual_dat=[]; gp.rikuz_dat_rng=[]; gp.rikuz_dat_keep=[]; gp.rikuz_dat_keep_rng=[];
   for (var i=0;i<2;i++){
-    gp.rikuz_dat_keep_rng.push(gp.rikuz_sheets[i].getRange('DA3:DA14'));// 76 , 86
+    gp.rikuz_dat_keep_rng.push(gp.rikuz_sheets[i].getRange('CV3:CV14'));// 76 , 86
     gp.rikuz_dat_keep.push(gp.rikuz_dat_keep_rng[i].getFormulas());
     Logger.log('load gp.rikuz_dat_keep[i]='+gp.rikuz_dat_keep[i]);
     gp.rikuz_dat_rng.push(gp.rikuz_sheets[i].getRange(3,3,12,lcol));
@@ -93,9 +93,7 @@ function rikuzMain() {
   loadRikuzData();
   var hfiles=getSubFoldersFiles(gp.top_accounting_dir_id,'rikuz');
   var ta={};
-  if (gp.rikuz_add_manual_hours == 'y'){
-    loadManualReports(ta);
-  }
+  loadManualReports(ta);
   for (var i=0; i<hfiles.length; i++){
     processHfile(hfiles[i], ta);
   }
@@ -111,11 +109,16 @@ function rikuzMain() {
 }  
 
 function checkSkip(fo) {
-  let fomon=getMonthFromStr(fo.getName());
-  Logger.log('folder name='+fo.getName()+ ' mon0='+fomon[0]+ ' mon1='+fomon[1]);
-  //Logger.log('gp.g_month_name='+gp.g_month_name);
-  if ( gp.g_month_name != 'all' && ! gp.g_month_name_ar.includes(fomon[0])){
-    Logger.log('skip');
+  try {
+    let fomon=getMonthFromStr(fo.getName());
+    Logger.log('folder name='+fo.getName()+ ' mon0='+fomon[0]+ ' mon1='+fomon[1]);
+    //Logger.log('gp.g_month_name='+gp.g_month_name);
+    if ( gp.g_month_name != 'all' && ! gp.g_month_name_ar.includes(fomon[0])){
+      Logger.log('skip');
+      return 1;
+    }
+  } catch (e) {
+    writeLog('skip invalid folder name: '+fo.getName()+ ' error='+e);
     return 1;
   }
   return 0;
@@ -162,9 +165,9 @@ function processHfile(ss,ta) {
   var acc_mon_num=m[1];
   for (var i=0; i<shts.length; i++){
     var wrkrnm=shts[i].getName();
-    if (gp.rikuz_wrkrs_filter && ! gp.rikuz_wrkrs_filter_ar.includes(wrkrnm)){ //mmm
-      continue; 
-    }
+//    if (gp.rikuz_wrkrs_filter && ! gp.rikuz_wrkrs_filter_ar.includes(wrkrnm)){ //mmm
+//      continue; 
+//    }
     //Logger.log('wrkrnm='+wrkrnm);
     if (! ta.hasOwnProperty(wrkrnm)){
       ta[wrkrnm]={};
@@ -195,7 +198,9 @@ function getHTotalHours(tsheet,tw){
   var prev_subj='';
   //Logger.log('getHTotalHours: trow='+ trow +' name='+tsheet.getName()+' total_sheet='+total_sheet+ ' total_sheetac='+total_sheetac);
   var sha=tsheet.getRange(8, 2,trow-8,6).getValues();
+  var wrkrnm=tsheet.getName();
   for (var i=0; i < trow-8; i++) {
+    
     //prev dt and subj
     if (! sha[i][5]){
       sha[i][5]=prev_subj;
@@ -206,13 +211,21 @@ function getHTotalHours(tsheet,tw){
     prev_date=dt1;
     var dt= new Date(dt1);
     var mon=(dt.getMonth()+1).toString();
+    
     // filter
+    if (gp.rikuz_grade_filter_ar && ! gp.rikuz_grade_filter_ar.includes(sha[i][4])){
+      continue;
+    }
     if (gp.rikuz_subjects ) {
       if (gp.rikuz_subjects_omit != 'y' && ! gp.rikuz_subjects_ar.includes(sha[i][5]) ) {
-        continue;
+        if (! gp.rikuz_wrkrs_filter || gp.rikuz_wrkrs_filter_ar.includes(wrkrnm)){
+          continue;
+        }
       }
       if (gp.rikuz_subjects_omit == 'y' && gp.rikuz_subjects_ar.includes(sha[i][5]) ) {
-        continue;
+        if (! gp.rikuz_wrkrs_filter || gp.rikuz_wrkrs_filter_ar.includes(wrkrnm)){
+          continue;
+        }
       }
     }
     //add hours
