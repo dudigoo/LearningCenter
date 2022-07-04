@@ -902,6 +902,37 @@ function getSchedWrkrRows(nm, hist) {
   return values;
 }
 
+
+function crtSchedTablRowPerDate(rows) {
+  let ar=[['day', '?','8-9','9-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20','20-21','21-22']];
+  let trow=1;
+  let pdate=rows[0][0];
+  for (let i=0; i<rows.length;i++){
+    if (pdate != rows[i][0]){
+      trow++;
+      pdate=rows[i][0];
+    }
+    if (! ar[trow]){
+      ar[trow]=[rows[i][0], '','','','','','','','','','','','','','',''];
+    }
+    let val=rows[i][3]+'/'+rows[i][4];
+    let hr=rows[i][1];
+    let col;
+    if (hr.match(/:00/)){
+      col=parseInt(hr)-6;
+    } else {
+      val=hr+  ' : '+val;
+      col=1;
+    }
+    ar[trow][col]=val;
+  }
+  //Logger.log('b femptycols ar='+JSON.stringify(ar));
+  let dc=findEmptyColumns(ar,1);
+  dropColumns(ar,dc);
+  return ar;
+}
+
+
 function crtSchedTabl(rows) {
   let ar=[];
   hrs=['3-4','4-5','5-6','6-7','7-8'];
@@ -958,11 +989,11 @@ function getPupRows(nm,targetSheet) {
   for (let i=0;i<targetSheet.length;i++){
     //Logger.log('targetSheet[i]= '+targetSheet[i]);
     let val=querySheet(query, gp.shibutz_file_id, targetSheet[i],0);
-    Logger.log('val= '+val);
+    //Logger.log('val= '+val);
     //xval.forEach(e => e.splice(0,0,targetSheet[i]));
     values=values.concat(val)
   }
-  Logger.log('getPupRs values='+JSON.stringify(values));
+  //Logger.log('getPupRs values='+JSON.stringify(values));
   return values;
 }
 
@@ -982,6 +1013,8 @@ function getPupilSched(pnm,mode) {
     out.rows=getPupRows(out.name,dts);
     if (mode=='week'){
       out.rows=crtSchedTabl(out.rows);
+    } else if (mode=='hrs'){
+      out.rows=crtSchedTablRowPerDate(out.rows);
     }
   } else {
     out.found='n';

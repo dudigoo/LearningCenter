@@ -5,7 +5,13 @@
   async function sendSMS(accountId, phoneId, to, msg) { /* ... */ }
   async function deletePhoneNumber(accountId, phoneNumberId) { /* ... */ }
 function tst5() {
-let t='4 15/6/22';
+let t=[[9,,2,3,4],[9,,2],[9,,2,,4],[9,,2,,4]];
+let a2=findEmptyColumns(t,1);
+  Logger.log('x='+a2);
+  dropColumns(t,a2);
+  Logger.log('xd='+JSON.stringify( t));
+
+   return;
   let dts=SpreadsheetApp.openById('1SXIOfVl9K4eagWJ8HgcXAR2GAnRIh5IqT_4ptkJAHO4').getSheetByName('Form responses 1').getRange("K6").getValue();
   let dt=new Date('7/4/22');
   //let dts='3/7/22,10/7/22,20/7/22';

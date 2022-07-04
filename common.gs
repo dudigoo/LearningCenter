@@ -178,3 +178,38 @@ function chomp(raw_text){
   raw_text=raw_text.replace(/ *, */g, ',').replace(/,,/g, ',').replace(/  /g, ' ').replace(/[, ]+$/, '');
   return raw_text.replace(/^\s+/, '');
 }
+
+function dropColumns(ar,cols) {
+  for (let k=cols.length-1;k>=0;k--){
+    for (let i=0;i<ar.length;i++){
+      ar[i].splice(cols[k],1);
+    }
+  }
+}
+
+function findEmptyColumns(ar,from_row) {
+  let max=0;
+  //Logger.log('femptycols ar='+JSON.stringify(ar));
+  for (let i=0;i<ar.length;i++){
+    //Logger.log('i='+i);
+    if (ar[i].length>max){
+      max=ar[i].length;
+    }
+  }
+  emp_col=[];
+  for (let j=0;j<max;j++){
+    trim=1;
+    for (let i=from_row;i<ar.length;i++){
+      //Logger.log('j='+j+ ' i='+i+ ' ar[i][j]='+ar[i][j]);
+      if (ar[i][j]) {
+        trim=0;
+        //Logger.log('nemp j='+j+ ' i='+i);
+        break;
+      }
+    }
+    if (trim){
+      emp_col.push(j);
+    }
+  }
+  return emp_col;
+}
