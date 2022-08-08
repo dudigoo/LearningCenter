@@ -1,6 +1,6 @@
 var wtyp_s = 'סטודנטים';  var wtyp_m = 'מורים'; var wtyp_h = 'חניכים';
 var workers_copied=0;
-log_row=3;
+//log_row=3;
 var ma_ss;
 var ma_ss_id;
 var g_editors=['mlemida.ryam@gmail.com','dudigoo@gmail.com'];
@@ -14,7 +14,6 @@ gp.locale='he-IL';
 
 function mergeMonthSheets() {
   collectParams();
-  writeLog('Start');
   workers_copied=0;
   for (var i in wfolders) {
     copyDirSheets(wfolders[i]);

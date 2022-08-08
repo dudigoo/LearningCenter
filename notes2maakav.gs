@@ -4,7 +4,23 @@ var g_maakav_sh;
 var g_present_date; var g_min_dt;
 var g_dup_hour={};
 
-function cpMain() { 
+function cpMain() {
+  collectParams(3);
+  cpInit();
+  let files_ar=[];
+  getFilesFromFoldersRecurse(files_ar, gp.w_folders_id_a, 'application/vnd.google-apps.spreadsheet', 1, 25);
+  Logger.log('files to cp2maakav='+files_ar.length);
+  for (let i=0;i<files_ar.length;i++){
+    let tnm = files_ar[i].getName();
+    let ss = SpreadsheetApp.open(files_ar[i]);
+    let tabnm=tnm.replace(/^\S+ \S+ \S+ /, '');
+    let w=getWorkerByName(tabnm);
+    cp2maakav(files_ar[i],ss,w);
+  }
+  mailLog('hreports2maakav')
+}
+
+function cpMain2() { 
   //return; 
   collectParams(3);
   cpInit();

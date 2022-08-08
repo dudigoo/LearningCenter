@@ -13,7 +13,6 @@ var absent_str='לא הגיע';
 
 function addw() {
   collectParams();
-  writeLog('Start addw');
   var res=confirm_popup();
   if (res=='NO') { return; }
   let worker_rows=getWorkersRows();

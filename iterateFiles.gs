@@ -2,7 +2,7 @@ var g_func2run;
 
 function iterateMain() {  
   //collectParams();
-  writeLog('Starting..' + g_func2run);
+  //writeLog('Starting..' + g_func2run);
   for (var i in wfolders) {
     fixDir(wfolders[i]);
   }

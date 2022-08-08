@@ -2,7 +2,6 @@ var ab_subjects=['ספרות','תנך','ניהול עסקי','מתמטיקה','�
 
 /*function addNoShow2MaakavMain() {
   collectParams();
-  writeLog('Start');
   gp.ab_sat_dt=getDtPlusDays(gp.ab_sun_dt,6);
   gp.rows_to_add2maakav=[];
   let abclasses_sh=getABSS().getSheetByName('חניכים 6.3');
@@ -115,7 +114,6 @@ function getABSS() {
 /*
 function updatePupilAttendMain() {
   collectParams();
-  writeLog('Start');
   let abatt_sh=getABSS().getSheetByName('ניקוד 6.3');
   //let abatt_sh=getABSS().getSheetByName('ניקוד');
   let miss_sh=getABSS().getSheetByName('חיסורים 6.3');
@@ -171,7 +169,6 @@ function updAttenStuScore(miss_ar, attend_ar, stu, i) {
 */
 function updAttenStuScoreInTimeRangeMain() {
     collectParams();
-    writeLog('Start');
     let sh=getABSS().getSheetByName('ניקוד');
     //let rng=sh.getRange(5,2,3,2);
     let rng=sh.getRange(5,2,sh.getLastRow()-4,3);

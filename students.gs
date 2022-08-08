@@ -69,7 +69,6 @@ function getHistRows(stu) {//stu: str  , subj: []
 
 function getMashovScoresMain() {
   collectParams();
-  writeLog('Start');
   var folder = DriveApp.getFolderById(gp.mashov_scores_dir_id);
   convertXlsx2sheets(folder);
   var add_rows=[];
@@ -101,11 +100,11 @@ function getScoresFromMashovFile(sh, add_rows) {
   //Logger.log('sh_vals[0]='+sh_vals[0]);
   for (let i=1;i<sh_vals.length;i++){
     //Logger.log('i='+i+' nm='+sh_vals[i][0]);
-    doStudent(sh_vals[0], sh_vals[i], add_rows,i);
+    getStudentMashovScores(sh_vals[0], sh_vals[i], add_rows,i);
   }
 }
 
-function doStudent(sh_vals0, stud_vals, add_rows,i) {
+function getStudentMashovScores(sh_vals0, stud_vals, add_rows,i) {
   if (! stud_vals[0] && ! stud_vals[1]){
     return;
   }

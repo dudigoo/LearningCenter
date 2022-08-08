@@ -44,38 +44,43 @@ function findNoQuizPupilsWord(pps,quizs,pat) {
   return found_ar;
 }
 
-
-function collectQuizResultsMain() {
+function updateQuizResultsMain() {
   collectParams();
-  let scoreFiles=getSubFoldersFiles(quiz_dir_id);
-  Logger.log('scoreFiles='+scoreFiles.length);
-  let scores_ar=getScoresFromFiles(scoreFiles);
-  saveQuizData(scores_ar,getQuizSaveSh());
-}
-
-function getQuizSaveSh() {
-  if (! gp.quiz_result_sh){
-    gp.quiz_result_sh=getMaakavSS().getSheetByName('allQuiz');
+  let days_changed=1;
+  //quiz_dir_id='1IPmlBkL_f5V7RxuewRH7Z50_SpaXLABK';
+  let files_ar=[];
+  let cur_all_quiz_sh=getMaakavSS().getSheetByName('allQuiz');
+  let cur_all_quiz_ar=cur_all_quiz_sh.getDataRange().getValues();
+  let res=getFolderIdFilesRecursivly(quiz_dir_id,'application/vnd.google-apps.spreadsheet' , files_ar, 100);
+  //Logger.log('files_ar '+files_ar);
+  let dt= new Date();
+  dt.setHours(dt.getHours()-26*days_changed);
+  Logger.log('ignore files modified earlier then '+dt);
+  for (let i=0;i<files_ar.length;i++){
+    if (files_ar[i].getLastUpdated()<dt){
+      continue;
+    }
+    let scores_ar=getScoresFromFile(SpreadsheetApp.open(files_ar[i]));
+    //Logger.log('fixing file '+files_ar[i].getName());
+    cur_all_quiz_ar=replaceOldScoresWithNewScores(cur_all_quiz_ar,scores_ar,2);
   }
-  //Logger.log('shnm='+gp.quiz_result_sh.getName());
-  return gp.quiz_result_sh;
+  cur_all_quiz_sh.getRange(1,1,cur_all_quiz_ar.length,cur_all_quiz_ar[0].length).setValues(cur_all_quiz_ar);
 }
 
-function saveQuizData(scores_ar,sh) {
-  sh.getRange(2,1,sh.getLastRow(),6).clear();
-  if (! scores_ar.length){return}
-  sh.getRange(2,1,scores_ar.length,6).setValues(scores_ar);
-}
-
-function getScoresFromFiles(scoreFiles) {
-  let rows=[];
-  for (let i=0;i<scoreFiles.length;i++){
-    let file_rows=getScoresFromFile(scoreFiles[i]);
-    if (file_rows){
-      rows=rows.concat(file_rows);
+function replaceOldScoresWithNewScores(full_ar,replace_ar, comp_pos) {
+  let match_val=replace_ar[0][comp_pos];
+  let p1=0;let p2;
+  for (let i=1;i<full_ar.length;i++){
+    //Logger.log('full_ar[i]='+JSON.stringify(full_ar[i]));
+    //Logger.log('replace_ar[i]='+JSON.stringify(replace_ar[i]));
+    if (full_ar[i][comp_pos] == match_val){
+      full_ar.splice(i--,1);
+      p1++;
     }
   }
-  return rows;
+  Logger.log('match_val='+match_val+'deleted='+p1+ ' added='+replace_ar.length);
+  
+  return full_ar.concat(replace_ar);
 }
 
 function getEditUrls(sheet,form) {

@@ -1,4 +1,62 @@
 
+function ctst() {
+  let ar=[];
+  let fs=getFilesFromFoldersRecurse(ar,['1Io6uaaakK5zQ3LEu3A6494pJq72SA75P','1ZnEolURbvCFHo3ugo_P5x875GqYZmskD'],'application/vnd.google-apps.spreadsheet' ,1, 25);
+  Logger.log('#files='+ar.length);
+  for (let i=0;i<ar.length;i++){
+    Logger.log('f Name '+ar[i].getName());
+  }
+}
+
+function getFilesFromFoldersRecurse(files_ar, folder_id_a, mime_typ , max_depth, hours_modified){
+  for (let i=0;i<folder_id_a.length;i++){
+    getFolderIdFilesRecursivly(folder_id_a[i],mime_typ,files_ar,max_depth, hours_modified)
+  }
+}
+
+function getFolderIdFilesRecursivly(fol_id,mime_typ,files_ar,max_depth, hours_modified) {//max_depth: dft=1 i.e not recurse
+  let folder = DriveApp.getFolderById(fol_id);
+  max_depth= max_depth ? max_depth:1;
+  let cur_depth=1;
+  let dt;
+  if (hours_modified){
+    dt= new Date();
+    dt.setHours(dt.getHours()- hours_modified);
+  }
+  getFolderFilesRecursivly(folder, mime_typ,files_ar,max_depth,cur_depth, dt);
+  
+}
+
+function getFolderFilesRecursivly(passedFolder,mime_typ,files_ar,max_depth,cur_depth, dt) {
+  let fileContents = mime_typ ? passedFolder.getFilesByType(mime_typ) : passedFolder.getFiles();
+  let file;
+  let fileName;
+  while(fileContents.hasNext()) {
+    let f=fileContents.next();
+    if (!dt || f.getLastUpdated()>dt){
+      //Logger.log('fn='+f.getName());
+      //Logger.log('dt='+dt+' f.getLastUpdated()='+f.getLastUpdated());
+      files_ar.push(f);
+    }
+  }
+  if (max_depth>cur_depth){
+    getFoldersFilesRecursivly(passedFolder, mime_typ, files_ar,max_depth,cur_depth+1);
+  }
+}
+
+function getFoldersFilesRecursivly(passedFolder, mime_typ, files_ar,max_depth,cur_depth) {
+  let folderContents = passedFolder.getFolders();
+  let folder;
+  let folderName;
+
+  while(folderContents.hasNext()) {
+    folder = folderContents.next();
+    folderName = folder.getName();
+    //Logger.log('folderName '+folder.getName());
+    getFolderFilesRecursivly(folder, mime_typ, files_ar, max_depth,cur_depth, dt);
+  }
+}
+
 function getFmtDtStr(dt) {
   return dt.toLocaleDateString(gp.locale,{year:"2-digit",month:"2-digit", day:"2-digit"}).replace(/\./g, '/').replace(/0(\d)/g, "$1");
 }
@@ -57,19 +115,22 @@ function getLogsh() {
   if (! gp.scripts_log_sh){
     gp.scripts_log_sh = SpreadsheetApp.openById(gp.ms_container_id).getSheetByName('log');
     gp.scripts_log_sh.getRange(1,3,gp.scripts_log_sh.getLastRow(),1).clear();
+
   }
   return gp.scripts_log_sh;
 }
 
 function writeLog(msg) {
-  var str = 'C' + log_row;
-  Logger.log('row=' + str + ' msg=' + msg);
-  getLogsh().getRange(str).setValue(msg);  
-  log_row=log_row+1;
+  //var str = 'C' + log_row;
+  Logger.log('write log msg=' + msg);
+  //getLogsh().getRange(str).setValue(msg);  
+  //log_row=log_row+1;
+  gp.log_msgs.push([msg]);
 }
 
 function checkLog(action,subj,to){
-  writeLog('End');
+  Logger.log('checkLg errs action='+action+' subj='+' to='+to );
+  //writeLog('End');
   if (! subj){
     subj='Shibutz errors';
   }
@@ -78,11 +139,15 @@ function checkLog(action,subj,to){
   } else {
     to=to+',mlemida.ryam@gmail.com'
   }
-  if (gp.scripts_log_sh.getRange('C4').getValue() != 'End') {
+  //Logger('gp.scripts_log_sh.getRange("C4").getValue()='+gp.scripts_log_sh.getRange('C4').getValue());
+  if (gp.log_msgs.length) {
+    Logger.log('ERRORS num='+gp.log_msgs.length+' msgs='+JSON.stringify(gp.log_msgs));
+    writeLog('End');
+    getLogsh().getRange(3,3,gp.log_msgs.length,1).setValues(gp.log_msgs);
     Logger.log('has errs' );
     if (action == 'mail'){
-      var r=gp.scripts_log_sh.getRange(3, 3, gp.scripts_log_sh.getLastRow()-2, 1);
-      var me=r.getValues().join("\n");
+      //var r=gp.scripts_log_sh.getRange(3, 3, gp.scripts_log_sh.getLastRow()-2, 1);
+      var me=gp.log_msgs.join("\n");
       MailApp.sendEmail(to, subj,  me);
       Logger.log('Sent mail=' + me );
     } else {
@@ -110,23 +175,28 @@ function onOpen(){
 
 function collectParams(col) {
   if (! col){col=2};
+  gp.log_msgs=[];
   //Logger.log('container_id='+gp.ms_container_id);
   let params = getScriptGlobalParams(col);
   gp.heb_year = params[0][0];
   gp.g_month_name = params[1][0];
   gp.monthly_thin = params[2][0];
   let v=params[3][0]; //stu
+  gp.w_folders_id_a=[];
   if (v != '') {
+    gp.w_folders_id_a.push(v);
     wfolders.push([v, wtyp_s]);
   }
   wtyp2fol_id[wtps] = v;
   v=params[4][0]; // morim
   if (v != '') {
+    gp.w_folders_id_a.push(v);
     wfolders.push([v, wtyp_m]);
   }
   wtyp2fol_id[wtpm] = v;
   v=params[5][0]; //hanichim
   if (v != '') {
+    gp.w_folders_id_a.push(v);
     wfolders.push([v, wtyp_h]);
   }
   wtyp2fol_id[wtph] = v;

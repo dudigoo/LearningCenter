@@ -89,7 +89,6 @@ function loadManualReports(ta) {
 
 function rikuzMain() {
   collectParams();
-  writeLog('Start');
   loadRikuzData();
   var hfiles=getSubFoldersFiles(gp.top_accounting_dir_id,'rikuz');
   var ta={};
@@ -249,7 +248,6 @@ function getHTotalHours(tsheet,tw){
  
 function rikuz2pikuach() {
   collectParams();
-  writeLog('Start');
   var ro=7;
   var sh_rik= SpreadsheetApp.openById(gp.nizul_src).getSheetByName('merkaz');
   var sh_niz= SpreadsheetApp.openById(gp.nizul_tgt).getSheetByName('sheet1');
