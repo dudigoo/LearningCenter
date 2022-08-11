@@ -40,11 +40,11 @@ function getFolderFilesRecursivly(passedFolder,mime_typ,files_ar,max_depth,cur_d
     }
   }
   if (max_depth>cur_depth){
-    getFoldersFilesRecursivly(passedFolder, mime_typ, files_ar,max_depth,cur_depth+1);
+    getFoldersFilesRecursivly(passedFolder, mime_typ, files_ar,max_depth,cur_depth+1,dt);
   }
 }
 
-function getFoldersFilesRecursivly(passedFolder, mime_typ, files_ar,max_depth,cur_depth) {
+function getFoldersFilesRecursivly(passedFolder, mime_typ, files_ar,max_depth,cur_depth,dt) {
   let folderContents = passedFolder.getFolders();
   let folder;
   let folderName;
