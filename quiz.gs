@@ -46,7 +46,7 @@ function findNoQuizPupilsWord(pps,quizs,pat) {
 
 function updateQuizResultsMain() {
   collectParams();
-  let days_changed=1;
+  let days_changed=3;
   //quiz_dir_id='1IPmlBkL_f5V7RxuewRH7Z50_SpaXLABK';
   let files_ar=[];
   let cur_all_quiz_sh=getMaakavSS().getSheetByName('allQuiz');
@@ -61,13 +61,17 @@ function updateQuizResultsMain() {
       continue;
     }
     let scores_ar=getScoresFromFile(SpreadsheetApp.open(files_ar[i]));
-    //Logger.log('fixing file '+files_ar[i].getName());
+    if (! scores_ar){
+      continue;
+    }    
+    //Logger.log('fixing file '+files_ar[i].getName()+ ' scores_ar='+JSON.stringify(scores_ar));
     cur_all_quiz_ar=replaceOldScoresWithNewScores(cur_all_quiz_ar,scores_ar,2);
   }
   cur_all_quiz_sh.getRange(1,1,cur_all_quiz_ar.length,cur_all_quiz_ar[0].length).setValues(cur_all_quiz_ar);
 }
 
 function replaceOldScoresWithNewScores(full_ar,replace_ar, comp_pos) {
+  //Logger.log('comp_pos='+comp_pos+' replace_ar.length='+replace_ar.length);
   let match_val=replace_ar[0][comp_pos];
   let p1=0;let p2;
   for (let i=1;i<full_ar.length;i++){
