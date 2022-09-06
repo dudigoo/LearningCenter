@@ -61,11 +61,11 @@ function getMaakavSS() {
 
 function cp2maakav(file,ss,w) {
   w.worker_hours_url=file.getUrl();
-  //Logger.log(' person='+w.name + ' shnm='+gp.g_month_name) ;
+  Logger.log(' person='+w.name + ' shnm='+gp.g_month_name) ;
   var sheet = ss.getSheetByName(gp.g_month_name);
   var werrs=[];
   g_dup_hour={};
-  //Logger.log(' snm='+sheet.getName());
+  Logger.log(' snm='+sheet.getName());
   var rowsnum=sheet.getMaxRows() - 7;
   let sh_ar=sheet.getRange(8,1,rowsnum-7,sheet.getMaxColumns()).getValues();
   let copied_ar = sh_ar.map(x => [x[18]]);

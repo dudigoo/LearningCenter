@@ -9,9 +9,9 @@ function fillShibutzMain() {// 22/12/20,24/12/20
   //Logger.log('locale 3='+gp.locale);
   collectParams();
   if (gp.shib_dates == 'all'){
-    updateShibSheetsWork(9,1);
+    updateShibSheetsWork(25,1);
   } else if (gp.shib_dates == 'all2'){
-    updateShibSheetsWork(9,10);
+    updateShibSheetsWork(25,26);
   } else {
     shibutzDates();
   }
@@ -863,11 +863,15 @@ function crtSchedTablRowPerDate(rows) {
     }
     let val=rows[i][3]+'/'+rows[i][4];
     let hr=rows[i][1];
+    let hfr=parseInt(rows[i][1]);
+    let hto=parseInt(rows[i][2])-1;
     let col;
-    if (hr.match(/:00/)){
+    if (hr.match(/:00/) && rows[i][2].match(/:00/) && hfr==hto){
+    //if (hr.match(/:00/)){
       col=parseInt(hr)-6;
     } else {
-      val=hr+  ' : '+val;
+      val=hr+'-'+rows[i][2]+  ' : '+val;
+      //val=hr+  ' : '+val;
       col=1;
     }
     ar[trow][col]=ar[trow][col] ? (ar[trow][col] + ', ' + val) : val;
