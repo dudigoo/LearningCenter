@@ -283,3 +283,15 @@ function getGroupsDict() {
   }
   return map;
 }
+
+function findInvalidMipuiNames() {
+  collectParams();
+  let query2="select A, B, C, D ";
+  let quizs=querySheet(query2,gp.maakav_file_id,'mipuiNewKids21',1);
+  for (let i=0;i<quizs.length;i++){
+    if (! getAllPupilsMap()[quizs[i][2]]){
+      writeLog('invalid: i='+(i+2)+' name='+quizs[i][2]);
+    }
+  }
+  checkLog();
+}

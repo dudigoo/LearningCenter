@@ -18,6 +18,20 @@ function findNoQuizPupilsMain() {
   checkLog();
 }
 
+
+
+function findQuizInvalidNamesMain() {
+  collectParams();
+  let query2="select A, B, C, D ";
+  let quizs=querySheet(query2,gp.maakav_file_id,'allQuiz',1);
+  for (let i=0;i<quizs.length;i++){
+    if (! getAllPupilsMap()[quizs[i][0]]){
+      writeLog('invalid: i='+(i+2)+' name='+quizs[i][0]+' dt='+quizs[i][1]+' subj='+quizs[i][2]);
+    }
+  }
+  checkLog();
+}
+
 function findNoQuizPupilsWord(pps,quizs,pat) {
   const regex = new RegExp(pat);
   found_ar=[];
@@ -46,7 +60,7 @@ function findNoQuizPupilsWord(pps,quizs,pat) {
 
 function updateQuizResultsMain() {
   collectParams();
-  let days_changed=3;
+  let days_changed=1;
   //quiz_dir_id='1IPmlBkL_f5V7RxuewRH7Z50_SpaXLABK';
   let files_ar=[];
   let cur_all_quiz_sh=getMaakavSS().getSheetByName('allQuiz');
@@ -120,7 +134,7 @@ function getScoresFromFile(ss) {
   }
   let rows=[];
   for (let i=0;i<abc.length;i++){
-    rows.push([abc[i][2], dts[i][0], gp.quiz_subj_nm, abc[i][1], furl?rurls[i] : '', furl ])
+    rows.push([chomp(abc[i][2]), dts[i][0], gp.quiz_subj_nm, abc[i][1], furl?rurls[i] : '', furl ])
   }
   return rows;
 }

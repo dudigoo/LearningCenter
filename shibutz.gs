@@ -445,22 +445,23 @@ function fillShibDt(date) {
 }
 
 function wrkAr2DtSh(wrk_a,dt_sh, dtsh_exist) { 
-  Logger.log('s wrkAr2DtSh  wrk_a.length='+wrk_a.length+' dt_sh.getLastRow()='+dt_sh.getLastRow()+' dt_sh.getMaxRows()='+dt_sh.getMaxRows());
+  //Logger.log('s wrkAr2DtSh  wrk_a.length='+wrk_a.length+' dt_sh.getLastRow()='+dt_sh.getLastRow()+' dt_sh.getMaxRows()='+dt_sh.getMaxRows());
   let rows2add;
   if (dtsh_exist){
     rows2add=wrk_a.length-dt_sh.getMaxRows()+21;
     if (dt_sh.getLastRow()>1){
       dt_sh.getRange(2,1,dt_sh.getLastRow()-1, dt_sh.getLastColumn()).clearContent();
     }
-    Logger.log('dtsh_existh  rows2add='+rows2add );
+    //Logger.log('dtsh_existh  rows2add='+rows2add );
   } else {
     rows2add=wrk_a.length;
-    Logger.log('dtsh_existh=0  rows2add='+rows2add);
+    //Logger.log('dtsh_existh=0  rows2add='+rows2add);
   }
   if (rows2add>0){
     dt_sh.insertRowsAfter(dt_sh.getMaxRows()-1, rows2add);
   }
   //dt_sh.insertRowsAfter(3, wrk_a.length)
+  //Logger.log('wrk_a='+JSON.stringify(wrk_a));
   dt_sh.getRange(2,1,wrk_a.length, wrk_a[0].length).setValues(wrk_a);
   Logger.log('e wrkAr2DtSh');
   dt_sh.getRange(2, 1, wrk_a.length, 2).setFontColor('#999999');
@@ -477,6 +478,7 @@ function wrkAr2DtSh(wrk_a,dt_sh, dtsh_exist) {
 
 function getTmplHrs(dt) { 
   var tmpl=getShibTmpl(dt);
+  //Logger.log('tmpl='+tmpl+' dt='+dt);
   let sh=getShibutzSS().getSheetByName(tmpl);
   let hrs=sh.getRange(2,1,sh.getLastRow()-1,2).getValues();
   return hrs;
@@ -521,10 +523,10 @@ function fillTmRngs(wrk_a,dt, dt_str){
     var totm= hrs[r][1];
     var tmrng=getTmRngVars(frtm,totm);
     //Logger.log('s getAvailWrkrs');
-    //Logger.log('r='+r+' frtm='+frtm+' totm='+totm+' tmrng='+JSON.stringify(tmrng));
+    Logger.log('r='+r+' frtm='+frtm+' totm='+totm+' tmrng='+JSON.stringify(tmrng));
     let wrkrs=getAvailWrkrs(dt,tmrng);
     //Logger.log('e getAvailWrkrs');
-    //Logger.log('frtm='+frtm+' totm='+totm+' avail='+wrkrs);
+    Logger.log('frtm='+frtm+' totm='+totm+' avail='+wrkrs);
     if (! wrkrs || wrkrs.length ==0) {
       //writeLog("no workers for date="+dowmap[dow]+' rng='+frtm+'-'+totm);
       continue;
@@ -540,14 +542,14 @@ function getArrWSubj(e){
   if (! wo) {
     writeLog("no worker by this name="+e);
   }
-  return [e, wo.subj]
+  return [e, wo.subj_popu]
 }
 
 function fillNames(wrk_a,r,wrkrs,frtm,totm){
   //Logger.log(' r='+r+' wrkrs.length='+wrkrs.length);
   wrkrs.forEach( e => {
     let ws=getArrWSubj(e);
-    wrk_a.push([frtm,totm,ws[0],ws[1],'','','','','','','','','','','',''])
+    wrk_a.push([frtm,totm,ws[0], ws[1] ,'','','','','','','','','','','',''])
   });
 }
 
@@ -596,9 +598,9 @@ function getAvailWrkrs(dt,tmrng) {
       //Logger.log("dt="+dt+" wnm="+wnm +" isDtInRange=1  gp.zmin_rngs[i][8]"+gp.zmin_rngs[i][8] ); 
       continue;
     }
-    if (testNonRoundHour4Wrkr(wnm,tmrng,dow)){
+    /*if (testNonRoundHour4Wrkr(wnm,tmrng,dow)){
       continue;
-    }
+    }*/
     var rng=gp.zmin_rngs[i][dow];
     //Logger.log('rng='+rng+' i='+i+' dow='+dow+' nm='+wnm); //mmm
     var zamin=isAvail(rng,tmrng,wnm);
@@ -636,6 +638,7 @@ function isDtInRange(dt,frdt,todt,dts){
 }
 
 function testNonRoundHour4Wrkr(wnm,tmrng,dow) {// return true if non round and wrkr doesnt have recur with this tmrng
+// sigal wanted to ignore template non-round hours if no such recur meeting exists for the teacher
   if ( tmrng.fr_tm.match(/:00$/) &&  tmrng.to_tm.match(/:00$/)){
     return;
   }
@@ -850,7 +853,7 @@ function getSchedWrkrRows(nm, hist) {
 
 
 function crtSchedTablRowPerDate(rows) {
-  let ar=[['day', '?','8-9','9-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20','20-21','21-22']];
+  let ar=[['day', ' ','8-9','9-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20','20-21','21-22']];
   let trow=1;
   let pdate=rows[0][0];
   for (let i=0; i<rows.length;i++){
@@ -1117,3 +1120,5 @@ function remindMeeting(meet_ar, hours) {
     }
   }
 }
+
+

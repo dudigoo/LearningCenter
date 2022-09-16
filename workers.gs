@@ -104,6 +104,10 @@ function getWorker(rown,wa) {
   wrkr['subj']=wa[6];
   wrkr['popu']=wa[7];
   wrkr['share']=wa[8];
+  wrkr['subj_popu']=wrkr['subj'] + ' ' + wrkr['popu'];
+  if (wrkr.subj.match(/-([חטי]|יא|יב)$/)){
+    wrkr['subj_popu']=wrkr['subj']
+  }
   //writeLog('worker:name='+wrkr.name+' type='+wrkr.typ + ' mail='+wrkr['mail']);
   return wrkr;
 }
