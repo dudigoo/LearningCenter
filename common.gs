@@ -14,6 +14,40 @@ function getFilesFromFoldersRecurse(files_ar, folder_id_a, mime_typ , max_depth,
   }
 }
 
+function rangeItemsNotInAnotherRangeMain() {
+  collectParams();
+  writeLog('starting');
+  let a1=["select B where A='ח' and D=1", gp.pupil_alfon_id, "pupils"];
+  let a2=["select I,J,K,L,M where G='ח' and A='17:00'", gp.shibutz_file_id, "copyofSunday"];
+  let ar1=querySheet(a1[0],a1[1],a1[2],0);
+  let ar2=querySheet(a2[0],a2[1],a2[2],0);
+  let res=arItemsNotInAnotherAr(ar1.flat(), ar2.flat(), 1);
+  checkLog();
+}
+
+function arItemsNotInAnotherAr(ar1, ar2, flagDuplicates) {
+  //Logger.log('ar1='+JSON.stringify(ar1)+' len='+ar1.length);
+  for (let i=0;i<ar1.length;i++){
+    let found=0;
+    for (let j=0;j<ar2.length;j++){
+      if (ar2[j]==ar1[i]){
+        found++;
+        if (flagDuplicates){
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+    //Logger.log('found='+found+' el='+ar1[i]);
+    if (! found) {
+      writeLog('not in second array: '+ar1[i]);
+    } else if (found>1){
+      writeLog(found + ' times in second array: '+ar1[i]);
+    }
+  }
+}
+
 function getFolderIdFilesRecursivly(fol_id,mime_typ,files_ar,max_depth, hours_modified) {//max_depth: dft=1 i.e not recurse
   let folder = DriveApp.getFolderById(fol_id);
   max_depth= max_depth ? max_depth:1;

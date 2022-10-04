@@ -1,4 +1,5 @@
 var quiz_dir_id='1YP5aziOBgpzO1GS35z3yhY2op0qXdz2W';
+//var quiz_dir_id='1id3DC527c-svm9HTVREvvkAbPEFQTOAq';
 
 function findNoQuizPupilsMain() {
   collectParams();
@@ -60,15 +61,16 @@ function findNoQuizPupilsWord(pps,quizs,pat) {
 
 function updateQuizResultsMain() {
   collectParams();
-  let days_changed=1;
+  let changed_in_past_days=1;
   //quiz_dir_id='1IPmlBkL_f5V7RxuewRH7Z50_SpaXLABK';
   let files_ar=[];
   let cur_all_quiz_sh=getMaakavSS().getSheetByName('allQuiz');
-  let cur_all_quiz_ar=cur_all_quiz_sh.getDataRange().getValues();
+  //let cur_all_quiz_ar=cur_all_quiz_sh.getDataRange().getValues();
+  let cur_all_quiz_ar=cur_all_quiz_sh.getRange(2,1,cur_all_quiz_sh.getLastRow(),5).getValues();
   let res=getFolderIdFilesRecursivly(quiz_dir_id,'application/vnd.google-apps.spreadsheet' , files_ar, 100);
   //Logger.log('files_ar '+files_ar);
   let dt= new Date();
-  dt.setHours(dt.getHours()-26*days_changed);
+  dt.setHours(dt.getHours()-26*changed_in_past_days);
   Logger.log('ignore files modified earlier then '+dt);
   for (let i=0;i<files_ar.length;i++){
     if (files_ar[i].getLastUpdated()<dt){
@@ -81,7 +83,7 @@ function updateQuizResultsMain() {
     //Logger.log('fixing file '+files_ar[i].getName()+ ' scores_ar='+JSON.stringify(scores_ar));
     cur_all_quiz_ar=replaceOldScoresWithNewScores(cur_all_quiz_ar,scores_ar,2);
   }
-  cur_all_quiz_sh.getRange(1,1,cur_all_quiz_ar.length,cur_all_quiz_ar[0].length).setValues(cur_all_quiz_ar);
+  cur_all_quiz_sh.getRange(2,1,cur_all_quiz_ar.length,cur_all_quiz_ar[0].length).setValues(cur_all_quiz_ar);
 }
 
 function replaceOldScoresWithNewScores(full_ar,replace_ar, comp_pos) {
@@ -134,7 +136,8 @@ function getScoresFromFile(ss) {
   }
   let rows=[];
   for (let i=0;i<abc.length;i++){
-    rows.push([chomp(abc[i][2]), dts[i][0], gp.quiz_subj_nm, abc[i][1], furl?rurls[i] : '', furl ])
+    //rows.push([chomp(abc[i][2]), dts[i][0], gp.quiz_subj_nm, abc[i][1], furl?rurls[i] : '', furl ])
+    rows.push([chomp(abc[i][2]), dts[i][0], gp.quiz_subj_nm, abc[i][1], furl?rurls[i] : '' ])
   }
   return rows;
 }

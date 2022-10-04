@@ -369,9 +369,23 @@ function setRecurMeet(wrk_a,recur,rrow, date) {
     //wrk_a[i]=wrk_a[i].concat(recur.slice(4,16));
     wrk_a[i]=wrk_a[i].slice(0,4).concat(recur.slice(4,16));
     Logger.log('wrk_a[i] len a='+wrk_a[i].length );
+  } else if (isWorkerAvailable(recur[3], date, recur[1], recur[2])){
+    Logger.log('not in template but available');
+    let w=getWorkerByName(recur[3])
+    //let z=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16)));
+    //Logger.log('z='+JSON.stringify(z));
+    //wrk_a.push(z);
+    wrk_a.push(recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16))));
   } else {
     writeLog('cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur);
   }
+}
+
+function isWorkerAvailable(wnm, dt, frtm, totm) {
+  let tmrng=getTmRngVars(frtm,totm);
+  let avail=getAvailWrkrs(dt,tmrng, [wnm]);
+  //Logger.log('isWorkerAvailabl avail='+avail);
+  return avail.length;
 }
 
 function findRecRow(wrk_a,key) {
@@ -435,7 +449,7 @@ function fillShibDt(date) {
   addRecurring(wrk_a,dt);
   if (dtsh_exist){
     Logger.log('s cpMeetings');
-    cpMeetings(dt_sh,wrk_a);
+    cpMeetings(dt_sh,wrk_a,dt);
     Logger.log('e cpMeetings');
   }
   //Logger.log('wrk_a ='+JSON.stringify(wrk_a));
@@ -444,8 +458,18 @@ function fillShibDt(date) {
   Logger.log('fillShibDt end  dow='+dow+' date='+date);
 }
 
-function wrkAr2DtSh(wrk_a,dt_sh, dtsh_exist) { 
+function wrkAr2DtSh(wrk_a,dt_sh, dtsh_exist) {
   //Logger.log('s wrkAr2DtSh  wrk_a.length='+wrk_a.length+' dt_sh.getLastRow()='+dt_sh.getLastRow()+' dt_sh.getMaxRows()='+dt_sh.getMaxRows());
+  wrk_a.sort((a, b) => { 
+  if (a[0]>b[0]){ return 1;}				
+  if (a[0]<b[0]){ return -1;}
+  if (a[1]>b[1]){ return 1;}				
+  if (a[1]<b[1]){ return -1;} 
+  if (a[2]>b[2]){ return 1;}				
+  if (a[2]<b[2]){ return -1;}
+  return 0;
+} );  
+  
   let rows2add;
   if (dtsh_exist){
     rows2add=wrk_a.length-dt_sh.getMaxRows()+21;
@@ -492,7 +516,7 @@ function sortWrkr(sh){
   //Logger.log('sorted ');
 }
 
-function cpMeetings(old_sh,wrk_a){
+function cpMeetings(old_sh,wrk_a,dt){
   let oldrows=old_sh.getLastRow();
   if (oldrows<2){return}
   let oldall=old_sh.getRange(2,1,oldrows-1,16).getValues();
@@ -502,20 +526,32 @@ function cpMeetings(old_sh,wrk_a){
       continue;
     }
     //Logger.log('i='+i);
-    let res=addExistingMeeting(oldall[i],wrk_a, old_sh);
+    let res=addExistingMeeting(oldall[i],wrk_a, old_sh,dt);
     //Logger.log(' res='+res);
   }
 }
 
-function addExistingMeeting(meeting, wrk_a, sh){
+function addExistingMeeting(meeting, wrk_a, sh,date){
   var i=findRecRow(wrk_a, meeting.slice(0,3))
   if (i>-1){
     wrk_a[i]=meeting;
+  } else if (isWorkerAvailable(meeting[2], date, meeting[0], meeting[1])){
+    let w=getWorkerByName(meeting[2]);
+    wrk_a.push(meeting.slice(0,16));
   } else {
     writeLog('missing row for meeting. sheet='+sh.getName()+' meeting:'+meeting);
   }
 }
+/*
+  } else if (isWorkerAvailable(recur[3], date, recur[1], recur[2])){
+    //Logger.log('not in template but available');
+    let w=getWorkerByName(recur[3])
+    //let z=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16)));
+    //Logger.log('z='+JSON.stringify(z));
+    //wrk_a.push(z);
+    wrk_a.push(recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16))));
 
+  */
 function fillTmRngs(wrk_a,dt, dt_str){
   let hrs= getTmplHrs(dt_str);
   for (let r=0;r<hrs.length;r++){
@@ -523,10 +559,10 @@ function fillTmRngs(wrk_a,dt, dt_str){
     var totm= hrs[r][1];
     var tmrng=getTmRngVars(frtm,totm);
     //Logger.log('s getAvailWrkrs');
-    Logger.log('r='+r+' frtm='+frtm+' totm='+totm+' tmrng='+JSON.stringify(tmrng));
+    //Logger.log('r='+r+' frtm='+frtm+' totm='+totm+' tmrng='+JSON.stringify(tmrng));
     let wrkrs=getAvailWrkrs(dt,tmrng);
     //Logger.log('e getAvailWrkrs');
-    Logger.log('frtm='+frtm+' totm='+totm+' avail='+wrkrs);
+    //Logger.log('frtm='+frtm+' totm='+totm+' avail='+wrkrs);
     if (! wrkrs || wrkrs.length ==0) {
       //writeLog("no workers for date="+dowmap[dow]+' rng='+frtm+'-'+totm);
       continue;
@@ -577,7 +613,7 @@ function getTmRngVars(fr_tm,to_tm){
   return tmrng;
 }
 
-function getAvailWrkrs(dt,tmrng) {
+function getAvailWrkrs(dt,tmrng,specific_workers) {
   let dow=dt.getDay();
   var col=dow+3;
   var last_row;
@@ -586,7 +622,10 @@ function getAvailWrkrs(dt,tmrng) {
   for (var i=0;i<gp.zmin_nms.length;i++){ //wrkrs
     var wnm=gp.zmin_nms[i][0];
     wnm=chomp(wnm.toString());
-    //Logger.log(' nm='+wnm); 
+    //Logger.log('i='+i+' nm='+wnm); //xx
+    if (specific_workers && ! specific_workers.includes( wnm)){
+      continue;
+    }
     if (! wnm){
       continue;
     }
@@ -595,7 +634,7 @@ function getAvailWrkrs(dt,tmrng) {
       continue;
     }
     if (isDtInRange(dt,gp.zmin_rngs[i][6],gp.zmin_rngs[i][7],gp.zmin_rngs[i][8])){
-      //Logger.log("dt="+dt+" wnm="+wnm +" isDtInRange=1  gp.zmin_rngs[i][8]"+gp.zmin_rngs[i][8] ); 
+      //Logger.log("dt="+dt+" wnm="+wnm +" isDtInRange=1  gp.zmin_rngs[i][8]"+gp.zmin_rngs[i][8] ); //xx
       continue;
     }
     /*if (testNonRoundHour4Wrkr(wnm,tmrng,dow)){
@@ -610,11 +649,23 @@ function getAvailWrkrs(dt,tmrng) {
     }
   }
   //Logger.log('ret avail '+avail);
+  //return avail;
   return avail.sort();
 }
 
+function tstIsDtInRange(){
+  let dt= new Date('2022-09-20');
+  let gp={};
+    gp.zminut_sh=SpreadsheetApp.openById('1SXIOfVl9K4eagWJ8HgcXAR2GAnRIh5IqT_4ptkJAHO4').getSheetByName('Form responses 1');
+    let tdts=gp.zminut_sh.getRange(19,9,1,2).getValues();
+    let res=isDtInRange(dt,tdts[0][0],tdts[0][1]);
+    //Logger.log('res='+res);  
+
+}
+
 function isDtInRange(dt,frdt,todt,dts){
-  if (frdt && todt){
+  if (frdt && todt){// important: set correct timezone of calling project 
+    //Logger.log('date range dt= '+dt+ ' fr='+frdt+ ' to='+todt);
     if (dt.getTime()>=frdt.getTime() && dt.getTime()<=todt.getTime()) {
       //Logger.log('date in range dt= '+dt+ ' fr='+frdt+ ' to='+todt);
       //Logger.log('dt gettime()= '+dt.getTime()+ ' fr='+frdt.getTime()+ ' to='+todt.getTime());
@@ -659,7 +710,7 @@ function loadZminutSh() {
     for (let i=0;i<gp.zmin_rngs.length;i++){
       //Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]);
       if (gp.zmin_rngs[i][8]){
-        //Logger.log(' gp.zmin_rngs[i][8] ='+gp.zmin_rngs[i][8]);
+        //Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]+' gp.zmin_rngs[i][8] ='+gp.zmin_rngs[i][8]);//xx
         let ar=gp.zmin_rngs[i][8].split(',');
         let time_ar=[];
         for (let j=0;j<ar.length;j++){
@@ -671,7 +722,7 @@ function loadZminutSh() {
           }
         }
         gp.zmin_rngs[i][8]=time_ar;
-        //Logger.log(' gp.zmin_rngs[i][8] ='+gp.zmin_rngs[i][8]);
+        //Logger.log(' gp.zmin_rngs[i][8] ='+gp.zmin_rngs[i][8]);//xx
       }
     }
     //Logger.log(' nms='+gp.zmin_nms);
@@ -786,14 +837,14 @@ function getPrevNxtDates(current_dt) {
   prev_dt.setDate(prev_dt.getDate() - 1);
   Logger.log('prev_dt='+prev_dt);
   let prev_dow=prev_dt.getDay();
-  //Logger.log('prev_dt2='+prev_dt);
+  Logger.log('prev_dt2='+prev_dt);
   let prev_dt_formated=getFmtDtStr(prev_dt);
   prev_dt_formated = prev_dt_formated.replace(/0(\d)/g, "$1");
   //Logger.log('prev_dt_formated='+prev_dt_formated);
   let nxt_dt=new Date();
   nxt_dt.setDate(nxt_dt.getDate() + (gp.shib_days_cycle - 1));
   let nxt_dow=nxt_dt.getDay();
-  Logger.log('nxt_dt='+nxt_dt);
+  //Logger.log('nxt_dt='+nxt_dt);
   let nxt_dt_formated=getFmtDtStr(nxt_dt);
   nxt_dt_formated=nxt_dt_formated.replace(/0(\d)/g, "$1");
   Logger.log('nxt_dt_formated='+nxt_dt_formated);
@@ -1007,13 +1058,13 @@ function collectDatesMetaAr(dts, ar,addpday) {
 function updateAllDatesSheet(ar,addpday) {
   let sh=getShibutzSS().getSheetByName('allDays');
   sh.getRange(2,1,sh.getLastRow(),2).clear({ contentsOnly: true });
-  Logger.log('upd ar='+JSON.stringify(ar));
+  //Logger.log('upd ar='+JSON.stringify(ar));
   //let lr=ar[ar.length-1][0];
   let lr=ar[ar.length-1][0]+addpday*(ar.length-1);
   let newlr=lr + ar[ar.length-1][1] -1;
   let rng=sh.getRange(2,1,lr-1,2);
   let rng_ar=rng.getValues();
-  Logger.log('upd lr='+lr+' rng_ar.length'+rng_ar.length+' rng_ar[0].length='+rng_ar[0].length);
+  //Logger.log('upd lr='+lr+' rng_ar.length'+rng_ar.length+' rng_ar[0].length='+rng_ar[0].length);
   let added=0;
   for (let i=0; i<ar.length;i++){
     //Logger.log('upd i='+i+' ar[i][0]='+ar[i][0]);
@@ -1121,4 +1172,12 @@ function remindMeeting(meet_ar, hours) {
   }
 }
 
-
+function updateShibCurrSheet(){
+  let shnm=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName();
+  Logger.log('updateShibCurrSheet shnm='+shnm);
+  collectParams();
+  gp.shib_dates=getDtStrFromShNm(shnm);
+  Logger.log('gp.shib_dates='+gp.shib_dates);
+  shibutzDates();
+  checkLog('mail', 'schedule issue',gp.shibutz_mail_to);
+}
