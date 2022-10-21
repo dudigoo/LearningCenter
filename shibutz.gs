@@ -377,7 +377,7 @@ function setRecurMeet(wrk_a,recur,rrow, date) {
     //wrk_a.push(z);
     wrk_a.push(recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16))));
   } else {
-    writeLog('cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur);
+    writeLog('* Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur);
   }
 }
 
@@ -539,7 +539,7 @@ function addExistingMeeting(meeting, wrk_a, sh,date){
     let w=getWorkerByName(meeting[2]);
     wrk_a.push(meeting.slice(0,16));
   } else {
-    writeLog('missing row for meeting. sheet='+sh.getName()+' meeting:'+meeting);
+    writeLog('* Missing row for meeting. sheet='+sh.getName()+' meeting:'+meeting);
   }
 }
 /*
@@ -827,7 +827,8 @@ function shibutsDateProgressMain() {
     Logger.log('add gp.shib_dates='+gp.shib_dates);
     shibutzDates();
   } 
-  checkLog('mail','shibutz date progress');
+  checkLog();
+  //checkLog('mail','shibutz date progress');
 }
 
 function getPrevNxtDates(current_dt) {
@@ -1170,6 +1171,72 @@ function remindMeeting(meet_ar, hours) {
       }
     }
   }
+}
+
+function findAllGroupsSchedMistakesMain(){
+  collectParams();
+  let dts=getDtsOfSheetsToWorkOn(6, 1, 1);
+  for (let i=0;i<dts.length;i++){
+    findDtSheetMistakes(dts[i]);
+  }
+  let qry="select C,D,count(D)  group by C,D";
+  let groups=querySheet(qry,gp.shib_arrival_order_file_id,"groupArrivalOrder",1);  
+  writeLog("find pupils w/o Math");
+  let subj='מתמטיקה';
+  for (let i=0;i<groups.length;i++){
+    gp.shib_alldays_query="select T where H='"+groups[i][0]+"' and F='"+subj+"'";
+    gp.shib_alfon_query="select B where A='" +groups[i][0] + "' and D="+groups[i][1];
+    findPupilWithoutSubj();
+  }
+  checkLog('mail', 'schedule mistakes',gp.shibutz_mail_to);
+}
+
+function findDtSheetMistakes(shnm){
+  //Logger.log('shnm='+shnm);
+  let qry="select B,C,D where A="+(getDtObjFromTabNm(shnm).getDay()+1);
+  let groups=querySheet(qry,gp.shib_arrival_order_file_id,"groupArrivalOrder",1);
+  for (let i=0;i<groups.length;i++){
+    findDtSheetGroupMistakes(shnm,groups[i][0],groups[i][1],groups[i][2]);
+  }
+}
+
+function findDtSheetGroupMistakes(shib_sh_nm,time,clas,group){
+  let alfon_qry="select B where A='" +clas + "' and D="+group;
+  shib_dt_qry="select I,J,K,L,M where G='"+clas+"' and A='"+time+"'";
+  pupilSchedSheetMistakes(alfon_qry, shib_dt_qry, shib_sh_nm);
+}
+
+
+function findPupilWithoutMathMain() {
+  collectParams();
+  writeLog('starting');
+  findPupilWithoutSubj();
+  checkLog();
+}
+
+function findPupilWithoutSubj() {
+  let ar1=querySheet(gp.shib_alfon_query,gp.pupil_alfon_id,"pupils",0);
+  let ar2=querySheet(gp.shib_alldays_query,gp.shibutz_file_id,"allDays",0);
+  let ar3 =ar2.flat();
+  let ar4=[];
+  ar3.forEach(e => ar4.push(e.split(',')));
+  //Logger.log("ar4="+JSON.stringify(ar4));
+  let res=arItemsNotInAnotherAr(ar1.flat(), ar4.flat(), 0);
+}
+
+function rangeItemsNotInAnotherRangeMain() {
+  collectParams();
+  writeLog('starting');
+  pupilSchedSheetMistakes(gp.shib_alfon_query, gp.shib_dt_query, gp.shib_dt_sheet_nm);
+  checkLog();
+}
+
+function pupilSchedSheetMistakes(alfon_qry,shib_dt_qry,shib_sh_nm) {
+  let a1=[alfon_qry, gp.pupil_alfon_id, "pupils"];
+  let a2=[shib_dt_qry, gp.shibutz_file_id, shib_sh_nm];
+  let ar1=querySheet(a1[0],a1[1],a1[2],0);
+  let ar2=querySheet(a2[0],a2[1],a2[2],0);
+  let res=arItemsNotInAnotherAr(ar1.flat(), ar2.flat(), 1);
 }
 
 function updateShibCurrSheet(){

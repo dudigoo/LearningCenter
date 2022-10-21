@@ -14,17 +14,6 @@ function getFilesFromFoldersRecurse(files_ar, folder_id_a, mime_typ , max_depth,
   }
 }
 
-function rangeItemsNotInAnotherRangeMain() {
-  collectParams();
-  writeLog('starting');
-  let a1=["select B where A='ח' and D=1", gp.pupil_alfon_id, "pupils"];
-  let a2=["select I,J,K,L,M where G='ח' and A='17:00'", gp.shibutz_file_id, "copyofSunday"];
-  let ar1=querySheet(a1[0],a1[1],a1[2],0);
-  let ar2=querySheet(a2[0],a2[1],a2[2],0);
-  let res=arItemsNotInAnotherAr(ar1.flat(), ar2.flat(), 1);
-  checkLog();
-}
-
 function arItemsNotInAnotherAr(ar1, ar2, flagDuplicates) {
   //Logger.log('ar1='+JSON.stringify(ar1)+' len='+ar1.length);
   for (let i=0;i<ar1.length;i++){
@@ -119,7 +108,7 @@ function querySheet(query,fid,shname,headers){
   let url = "https://docs.google.com/spreadsheets/d/" + fid + "/gviz/tq?sheet=" + shname + "&headers="+hdrs+"&tqx=out:csv&tq=" + encodeURIComponent(query);
   Logger.log('query='+query +' shname='+shname +' hdrs='+hdrs);
   var res = UrlFetchApp.fetch(url, {headers: {Authorization: "Bearer " + ScriptApp.getOAuthToken()}});
-  Logger.log('url='+url );
+  //Logger.log('url='+url );
   //Logger.log('res ='+res );
   let vals;
   try {
@@ -272,6 +261,11 @@ function collectParams(col) {
   gp.shibutz_mail_to = params[25][0];
   gp.mashov_scores_dir_id = params[26][0];
   gp.hours_master_id = params[27][0];
+  gp.shib_alfon_query = params[28][0];
+  gp.shib_alldays_query = params[29][0];
+  gp.shib_dt_query = params[30][0];
+  gp.shib_dt_sheet_nm = params[31][0];
+  gp.shib_arrival_order_file_id = params[32][0];
   //Logger.log('pms='+params[29]);
   //gp.ab_last_dt = params[29][0];
   //gp.dates_dmy_fmt = (gp.scripts_ss.getSpreadsheetLocale() == 'iw_IL') ? 'y' : '';
