@@ -266,6 +266,7 @@ function collectParams(col) {
   gp.shib_dt_query = params[30][0];
   gp.shib_dt_sheet_nm = params[31][0];
   gp.shib_arrival_order_file_id = params[32][0];
+  gp.quiz_find_invalid_name_exam_only = params[33][0];
   //Logger.log('pms='+params[29]);
   //gp.ab_last_dt = params[29][0];
   //gp.dates_dmy_fmt = (gp.scripts_ss.getSpreadsheetLocale() == 'iw_IL') ? 'y' : '';

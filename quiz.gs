@@ -27,7 +27,9 @@ function findQuizInvalidNamesMain() {
   let quizs=querySheet(query2,gp.maakav_file_id,'allQuiz',1);
   for (let i=0;i<quizs.length;i++){
     if (! getAllPupilsMap()[quizs[i][0]]){
-      writeLog('invalid: i='+(i+2)+' name='+quizs[i][0]+' dt='+quizs[i][1]+' subj='+quizs[i][2]);
+      if (!gp.quiz_find_invalid_name_exam_only || (gp.quiz_find_invalid_name_exam_only && quizs[i][2].match(/מבדק|English/))){
+        writeLog('invalid: i='+(i+2)+' name='+quizs[i][0]+' dt='+quizs[i][1]+' subj='+quizs[i][2]);
+      }
     }
   }
   checkLog();
@@ -61,7 +63,7 @@ function findNoQuizPupilsWord(pps,quizs,pat) {
 
 function updateQuizResultsMain() {
   collectParams();
-  let changed_in_past_days=1;
+  let changed_in_past_days=2;
   //quiz_dir_id='1IPmlBkL_f5V7RxuewRH7Z50_SpaXLABK';
   let files_ar=[];
   let cur_all_quiz_sh=getMaakavSS().getSheetByName('allQuiz');

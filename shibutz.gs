@@ -508,14 +508,6 @@ function getTmplHrs(dt) {
   return hrs;
 }
 
-function sortWrkr(sh){
-  //Logger.log('sort ');
-  var rows=sh.getLastRow();
-  range = sh.getRange("A2:P"+rows);
-  range.sort([{column: 1, ascending: true}, {column: 2, ascending: true}]);
-  //Logger.log('sorted ');
-}
-
 function cpMeetings(old_sh,wrk_a,dt){
   let oldrows=old_sh.getLastRow();
   if (oldrows<2){return}
@@ -877,7 +869,7 @@ function expandGroup2members(ar,replace,from,to) {//from: 0 based, to: 0 based, 
   }
 }
 
-function getSchedWrkrRows(nm, hist) {
+function getSchedWrkrRows(nm, hist, group, lvl) {
     Logger.log('nm='+nm+' hist='+hist );
   let query = 'select A, B, C, D, F, G, H, I, J, K, L, M where (F != "" or G !="" or H !="" or I !="" or J !="" or K !="" or L !="" or M !="" or N !="")';
   let shnm='allDays';
@@ -887,6 +879,12 @@ function getSchedWrkrRows(nm, hist) {
     shnm='history';
   } else {
     query += nm ? (' and D = "'+nm+'"') : "";
+  }
+  if (lvl){
+    query += ' and H = "'+lvl+'"';
+  }
+  if (group){
+    query += ' and G contains "'+group+'"';
   }
   let values = querySheet(query, gp.shibutz_file_id, shnm);
   //  Logger.log('valx='+JSON.stringify(values) );
@@ -899,7 +897,7 @@ function getSchedWrkrRows(nm, hist) {
     values.reverse();
   }
   //Logger.log('7='+values[1][7]);
-  Logger.log('getSchedWrkrRows values='+values);
+  //Logger.log('getSchedWrkrRows values='+values);
   return values;
 }
 
@@ -1192,15 +1190,18 @@ function findAllGroupsSchedMistakesMain(){
 }
 
 function findDtSheetMistakes(shnm){
-  //Logger.log('shnm='+shnm);
-  let qry="select B,C,D where A="+(getDtObjFromTabNm(shnm).getDay()+1);
+  Logger.log('shnm='+shnm);
+  let qry="select B,C,D where A='"+(getDtObjFromTabNm(shnm).getDay()+1+"'");
   let groups=querySheet(qry,gp.shib_arrival_order_file_id,"groupArrivalOrder",1);
+  Logger.log('shnm='+shnm+' groups.length='+groups.length);
+  Logger.log(' groups='+groups);
   for (let i=0;i<groups.length;i++){
     findDtSheetGroupMistakes(shnm,groups[i][0],groups[i][1],groups[i][2]);
   }
 }
 
 function findDtSheetGroupMistakes(shib_sh_nm,time,clas,group){
+  Logger.log('shib_sh_nm='+shib_sh_nm+' time'+time+' clas'+clas+' group'+group);
   let alfon_qry="select B where A='" +clas + "' and D="+group;
   shib_dt_qry="select I,J,K,L,M where G='"+clas+"' and A='"+time+"'";
   pupilSchedSheetMistakes(alfon_qry, shib_dt_qry, shib_sh_nm);
@@ -1248,3 +1249,83 @@ function updateShibCurrSheet(){
   shibutzDates();
   checkLog('mail', 'schedule issue',gp.shibutz_mail_to);
 }
+
+function createScheduleWindowsReportMain(){
+  let sh=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  //Logger.log('updateShibCurrSheet shnm='+shnm);
+  collectParams();
+  let win_ss=SpreadsheetApp.openById('16Pig1bcyguk_yJlFZM9Jon8ygskxjYR4Y8jrdUdmhDM');
+  let url=createScheduleWindowsReport(win_ss,sh);
+  checkLog();
+}
+
+function tstHoles(){
+  let win_ss=SpreadsheetApp.openById('16Pig1bcyguk_yJlFZM9Jon8ygskxjYR4Y8jrdUdmhDM');
+  let sh=SpreadsheetApp.openById('1-VZOYe-sITfOgkDFEWAewEKZKGlnY9yXRCFoRaw-v_g').getSheetByName('2 7/12/22');
+  createScheduleWindowsReport(win_ss,sh);
+}
+
+function createScheduleWindowsReport(win_ss,sh){
+  let shnm=sh.getName();
+  let win_sh=win_ss.getSheetByName(shnm);
+  if (win_sh){
+    win_sh.getRange(2,1,win_sh.getMaxRows(),win_sh.getMaxColumns()).clear();
+  } else {
+    win_sh=win_ss.getSheetByName('tmpl').copyTo(win_ss);
+    win_sh.setName(shnm);
+  }
+  win_sh.showSheet();
+  win_ss.setActiveSheet(win_sh);
+  win_ss.moveActiveSheet(0);
+  let rows=sh.getRange(2,1,sh.getLastRow()+1,sh.getLastColumn()).getValues();
+  //let row1=[ ... rows[0]];
+  //Logger.log('rows[0]='+rows[0]);
+  rows.sort((a, b) => {
+      if (a[2]>b[2]){ return 1;}
+      if (a[2]<b[2]){ return -1;}
+      if (a[0]>b[0]){ return 1;}				
+      if (a[0]<b[0]){ return -1;}
+      if (a[1]>b[1]){ return 1;}				
+      if (a[1]<b[1]){ return -1;}      
+      return 0;
+    }  
+  );
+  let res=findHolesInScheduleRows(rows);
+  let row2add=res[0];
+  let color=res[1];
+  //row2add.splice(0,0,row1);
+  //Logger.log('row2add[0].length'+row2add[0].length);
+  win_sh.getRange(2,1,row2add.length,row2add[0].length).setValues(row2add);
+  for (let i=0;i<res[1].length;i++){
+    win_sh.getRange(color[i]+2,1,1,20).setBackground('#aad1f3');
+  }
+}
+
+  function findHolesInScheduleRows(rows){
+    let windows=[];
+    let rows2add=[];
+    let next_empty;
+    let prev_empty;
+    let cur_empty=rows[0].slice(4,13).every(element => element === "");
+    for (let i=0;i<rows.length-1;i++){
+      next_empty=rows[i+1].slice(4,13).every(element => element === "");
+      Logger.log('i='+i+' rows[i][2]='+rows[i][2]+' next_empty='+next_empty+' prev_empty='+prev_empty+' cur_empty='+cur_empty);
+      if (cur_empty){ 
+        let hole=false;
+        if (! next_empty && rows[i][2] == rows[i+1][2]){
+          rows2add.push(rows[i]);
+          if (! prev_empty && i && rows[i][2] == rows[i-1][2]){
+            windows.push(rows2add.length - 1);
+            hole=true;
+          }
+        }
+        if (! hole && ! prev_empty && i && rows[i][2] == rows[i-1][2]){
+          rows2add.push(rows[i]);
+        }
+        //Logger.log('rows[i].length='+rows[i].length+ ' i='+i)
+      }
+      prev_empty=cur_empty;
+      cur_empty=next_empty;
+    }
+    return [rows2add, windows];
+  }
