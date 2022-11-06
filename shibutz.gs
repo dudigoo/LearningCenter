@@ -1174,19 +1174,32 @@ function remindMeeting(meet_ar, hours) {
 function findAllGroupsSchedMistakesMain(){
   collectParams();
   let dts=getDtsOfSheetsToWorkOn(6, 1, 1);
+  writeLog('* find missing or double pupil');
   for (let i=0;i<dts.length;i++){
     findDtSheetMistakes(dts[i]);
   }
   let qry="select C,D,count(D)  group by C,D";
   let groups=querySheet(qry,gp.shib_arrival_order_file_id,"groupArrivalOrder",1);  
-  writeLog("find pupils w/o Math");
+  writeLog("* find pupils w/o Math");
   let subj='מתמטיקה';
   for (let i=0;i<groups.length;i++){
     gp.shib_alldays_query="select T where H='"+groups[i][0]+"' and F='"+subj+"'";
     gp.shib_alfon_query="select B where A='" +groups[i][0] + "' and D="+groups[i][1];
     findPupilWithoutSubj();
   }
+  findOvelappingMeetings();
   checkLog('mail', 'schedule mistakes',gp.shibutz_mail_to);
+}
+
+function findOvelappingMeetings(){
+  writeLog('* check overlaps');
+  let meet_a=querySheet("select A,B,C,D,F,G,H,J,K,L where D != '' order by D,A,B,C",gp.shibutz_file_id,"allDays",1);
+  for (let i=1;i<meet_a.length;i++){
+    if (meet_a[i][3] != meet_a[i-1][3] || meet_a[i][0] != meet_a[i-1][0]){ continue}
+    if (meet_a[i][1] < meet_a[i-1][2]) {
+      writeLog('overlapping meeting: date='+ meet_a[i][0]+ ' worker='+meet_a[i][3]+" from="+meet_a[i-1][1]+' to='+meet_a[i-1][2]+" from2="+meet_a[i][1]+' to2='+meet_a[i][2]);
+    }
+  }
 }
 
 function findDtSheetMistakes(shnm){
@@ -1269,14 +1282,19 @@ function createScheduleWindowsReport(win_ss,sh){
   let shnm=sh.getName();
   let win_sh=win_ss.getSheetByName(shnm);
   if (win_sh){
+    if (! win_sh.getRange(2,5,win_sh.getMaxRows()-1,win_sh.getMaxColumns()-4).isBlank()){
+      ui = SpreadsheetApp.getUi();
+      ui.alert("Meeting exists in this window sheet. Please clear it first");
+      return;
+    }
     win_sh.getRange(2,1,win_sh.getMaxRows(),win_sh.getMaxColumns()).clear();
   } else {
     win_sh=win_ss.getSheetByName('tmpl').copyTo(win_ss);
     win_sh.setName(shnm);
   }
   win_sh.showSheet();
-  win_ss.setActiveSheet(win_sh);
-  win_ss.moveActiveSheet(0);
+  //win_ss.setActiveSheet(win_sh);
+  //win_ss.moveActiveSheet(0);
   let rows=sh.getRange(2,1,sh.getLastRow()+1,sh.getLastColumn()).getValues();
   //let row1=[ ... rows[0]];
   //Logger.log('rows[0]='+rows[0]);
@@ -1299,6 +1317,7 @@ function createScheduleWindowsReport(win_ss,sh){
   for (let i=0;i<res[1].length;i++){
     win_sh.getRange(color[i]+2,1,1,20).setBackground('#aad1f3');
   }
+  win_sh.getRange(2,1,row2add.length,win_sh.getMaxColumns()).sort([{column: 1, ascending: true}, {column: 2, ascending: true}, {column: 3, ascending: true}]);
 }
 
   function findHolesInScheduleRows(rows){
@@ -1309,7 +1328,7 @@ function createScheduleWindowsReport(win_ss,sh){
     let cur_empty=rows[0].slice(4,13).every(element => element === "");
     for (let i=0;i<rows.length-1;i++){
       next_empty=rows[i+1].slice(4,13).every(element => element === "");
-      Logger.log('i='+i+' rows[i][2]='+rows[i][2]+' next_empty='+next_empty+' prev_empty='+prev_empty+' cur_empty='+cur_empty);
+      //Logger.log('i='+i+' rows[i][2]='+rows[i][2]+' next_empty='+next_empty+' prev_empty='+prev_empty+' cur_empty='+cur_empty);
       if (cur_empty){ 
         let hole=false;
         if (! next_empty && rows[i][2] == rows[i+1][2]){
