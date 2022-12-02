@@ -1,4 +1,10 @@
 
+function fileHasOpenComment(file_id) {
+  let comments = JSON.parse(Drive.Comments.list(file_id));
+  let items=comments.items;
+  return items.find(e => e.status=='open');
+}
+
 function ctst() {
   let ar=[];
   let fs=getFilesFromFoldersRecurse(ar,['1Io6uaaakK5zQ3LEu3A6494pJq72SA75P','1ZnEolURbvCFHo3ugo_P5x875GqYZmskD'],'application/vnd.google-apps.spreadsheet' ,1, 25);
@@ -267,6 +273,7 @@ function collectParams(col) {
   gp.shib_dt_sheet_nm = params[31][0];
   gp.shib_arrival_order_file_id = params[32][0];
   gp.quiz_find_invalid_name_exam_only = params[33][0];
+  gp.shib_windows_file_id = params[34][0];
   //Logger.log('pms='+params[29]);
   //gp.ab_last_dt = params[29][0];
   //gp.dates_dmy_fmt = (gp.scripts_ss.getSpreadsheetLocale() == 'iw_IL') ? 'y' : '';

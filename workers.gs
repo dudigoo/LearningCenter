@@ -57,7 +57,7 @@ function delw() {
 
 function getAllWorkers() {
   ws={}; ws_by_mail={};
-  var wa=getWorkersSh().getRange(2,1,getWorkersSh().getLastRow()-1,10).getValues();
+  var wa=getWorkersSh().getRange(2,1,getWorkersSh().getLastRow()-1,getWorkersSh().getLastColumn()).getValues();
   for (var i=0;i<wa.length;i++) {
     ws[wa[i][0]]=getWorker(0,wa[i]);
     ws_by_mail[wa[i][2]]=ws[wa[i][0]];
@@ -94,7 +94,7 @@ function getWorkersSh() {
 function getWorker(rown,wa) {
   var wrkr={};
   if (!wa){
-    wa=getWorkersSh().getRange(rown,1,1,10).getValues()[0];
+    wa=getWorkersSh().getRange(rown,1,1,15).getValues()[0];
   }
   wrkr['name']=wa[0];
   wrkr['phone']=wa[1];
@@ -103,11 +103,12 @@ function getWorker(rown,wa) {
   wrkr['typ']=wa[5];
   wrkr['subj']=wa[6];
   wrkr['popu']=wa[7];
-  wrkr['share']=wa[8];
+  //wrkr['share']=wa[8];
   wrkr['subj_popu']=wrkr['subj'] + ' ' + wrkr['popu'];
   if (wrkr.subj.match(/-([חטי]|יא|יב)$/)){
     wrkr['subj_popu']=wrkr['subj']
   }
+  wrkr['win_from1st_hour']=wa[10];
   //writeLog('worker:name='+wrkr.name+' type='+wrkr.typ + ' mail='+wrkr['mail']);
   return wrkr;
 }

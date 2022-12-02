@@ -12,7 +12,9 @@ function cpMain() {
   Logger.log('files to cp2maakav='+files_ar.length);
   for (let i=0;i<files_ar.length;i++){
     let tnm = files_ar[i].getName();
+    Logger.log(' tnm='+tnm);
     let ss = SpreadsheetApp.open(files_ar[i]);
+    Logger.log('ss name='+ss.getName());
     let tabnm=tnm.replace(/^\S+ \S+ \S+ /, '');
     let w=getWorkerByName(tabnm);
     cp2maakav(files_ar[i],ss,w);
@@ -155,7 +157,9 @@ function cpRowInfo(wrkr,rn,lnerrs, wrow, copied_ar, wrkr_rows2write) {
 }
 
 function notifyEducator(vals,wrkr){
-  if (! vals.note.match(/##/)) {
+  //Logger.log('notifyEducator wrkr='+JSON.stringify(wrkr) );
+  //Logger.log('vals='+JSON.stringify(vals) );
+  if (! vals.note.toString().match(/##/)) {
     return;
   }
   let ps=vals.pupils.split(',');
@@ -195,7 +199,7 @@ function getPupilEducator(pupil,level){
 }
 
 function notifyManager(vals,wrkr){
-  if (! vals.note.match(/@/)) {
+  if (! vals.note.toString().match(/@/)) {
     return;
   }
   let a='teacher:'+vals.wrkr;
