@@ -108,7 +108,7 @@ function getWorker(rown,wa) {
   if (wrkr.subj.match(/-([חטי]|יא|יב)$/)){
     wrkr['subj_popu']=wrkr['subj']
   }
-  wrkr['win_from1st_hour']=wa[10];
+  wrkr['win_formula']=wa[10];
   //writeLog('worker:name='+wrkr.name+' type='+wrkr.typ + ' mail='+wrkr['mail']);
   return wrkr;
 }

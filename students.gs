@@ -85,6 +85,54 @@ function getMashovScoresMain() {
   checkLog();
 }
 
+function updatePupilEmailFromMashovMain() {
+  collectParams();
+  var folder = DriveApp.getFolderById(gp.mashov_scores_dir_id);
+  convertXlsx2sheets(folder);
+  var add_rows=[];
+  
+  let kids_ar=getAlfonKids();
+  var files = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
+  while (files.hasNext()) {
+    var file = files.next();
+    //Logger.log('ss nm='+ss.getName());
+    let sh=SpreadsheetApp.open(file).getSheets()[0];
+    Logger.log('g fnm='+file.getName()+' sh nm='+sh.getName());
+    updatePupilsArEmail(sh);
+  }
+  Logger.log('updating...');
+  gp.pupilAlfonRange.setValues(gp.pupilAlfonAr);
+  checkLog();
+}
+
+function updatePupilsArEmail(sh) {
+  let sh_vals= sh.getRange(4,1,sh.getLastRow()-2,sh.getLastColumn()-2).getValues();
+  //Logger.log('sh_vals.length='+sh_vals.length+' sh.getLastRow()'+sh.getLastRow());
+  //Logger.log('sh_vals[0]='+sh_vals[0]);
+  for (let i=1;i<sh_vals.length;i++){
+    //Logger.log('i='+i+' 0='+sh_vals[i][3]+' '+sh_vals[i][2]);
+    
+    if (sh_vals[i][13]){
+      let nm=getKidMerkazNm(sh_vals[i][2]+' '+sh_vals[i][3], sh_vals[i][4]);
+      if (nm){
+        //Logger.log('nm='+nm);
+        let alfmail=getStuAr(nm)[5];
+        if (alfmail && alfmail != sh_vals[i][13] ){
+          writeLog('different nm='+nm+' alfon mail='+alfmail+' mashov mail='+sh_vals[i][13]);
+        } else {
+          if (alfmail == sh_vals[i][13]){
+            writeLog('same  nm='+nm+' alfon mail='+alfmail+' mashov mail='+sh_vals[i][13]);
+          } else {
+            writeLog('new  nm='+nm+' alfon mail='+alfmail+' mashov mail='+sh_vals[i][13]);
+            getStuAr(nm)[5]=sh_vals[i][13].toLowerCase();
+          }
+        }
+      }
+
+    }
+  }
+}
+
 function addMashovScoreRows(add_rows) {
   let grades_sh = getMaakavSS().getSheetByName('schoolGrades');
   //let grades_sh = SpreadsheetApp.openById('1bXCdG6Vyo6RpIhH9S6RoEieivfp_iz8kaNfWgWQkRH8').getSheetByName('schoolGrades');
@@ -131,7 +179,8 @@ function getAlfonKids(just_name) {
   if (! gp.pupilAlfonAr){
     let alfon_sh = getAlfonSS().getSheetByName('pupils');
     //let alfon_sh = SpreadsheetApp.openById('1yrL132sLyUUzRruG5EzivGOk8uC88p7KPRC9NwAWI6A').getSheetByName('pupils');
-    gp.pupilAlfonAr = alfon_sh.getRange(2,1,alfon_sh.getLastRow()-1,alfon_sh.getLastColumn()).getValues();
+    gp.pupilAlfonRange = alfon_sh.getRange(2,1,alfon_sh.getLastRow()-1,alfon_sh.getLastColumn());
+    gp.pupilAlfonAr = gp.pupilAlfonRange.getValues();
   }
   let result = just_name ? gp.pupilAlfonAr.map(e => e[1]) : gp.pupilAlfonAr;
 
@@ -142,7 +191,7 @@ function getKidMerkazNm(str,level) {
   let rnm='';
   let is_eq_str=str;
   let inx=getAlfonKids().findIndex(e => e[0]===level && e[2]===str);
-  Logger.log('str='+str+' inx='+inx+' level='+level);
+  //Logger.log('str='+str+' inx='+inx+' level='+level);
 
   if (inx>-1){
     rnm=getAlfonKids()[inx][1];
@@ -156,8 +205,9 @@ function getKidMerkazNm(str,level) {
       let inx2=getAlfonKids().findIndex(e => e[0]===level && e[1]=== is_eq_str);
       if (inx2 == -1) {
         writeLog(" not in alfon. name="+str+' level='+level+ ' swapped='+is_eq_str);
+      } else {
+        rnm=is_eq_str;
       }
-      rnm=is_eq_str;
     }
   }
   return(rnm);
@@ -258,12 +308,13 @@ function getPupilByMail(mail) {
 
 function getAllPupilsMap() {
   if (!gp.all_pupils_map){
-    let query = 'select *';
-    let res=querySheet(query,gp.pupil_alfon_id,'pupils');
-    if (!res || res.length<2){
-      Logger.log('failed query');
-      return;
-    }
+    let res=getAlfonKids();
+    //let query = 'select *';
+    //let res=querySheet(query,gp.pupil_alfon_id,'pupils');
+    //if (!res || res.length<2){
+    //  Logger.log('failed query');
+    //  return;
+    //}
     gp.all_pupils_map={};
     res.forEach(e => gp.all_pupils_map[e[1]]=e);
   }
