@@ -747,7 +747,7 @@ function loadZminutSh() {
     for (let i=0;i<gp.zmin_rngs.length;i++){
       //Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]);
       if (gp.zmin_rngs[i][8]){
-        //Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]+' gp.zmin_rngs[i][8]='+gp.zmin_rngs[i][8]);//xx
+        Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]+' gp.zmin_rngs[i][8]='+gp.zmin_rngs[i][8]);//xx
         let ar=gp.zmin_rngs[i][8].toString().split(',');
         let time_ar=[];
         for (let j=0;j<ar.length;j++){
@@ -1401,6 +1401,7 @@ function updateAllScheduleSheetsWindowsReportMain(){
     shib_modified=1;
   }
   Logger.log("has changed");
+  //let res=updateAllScheduleSheetsWindowsReportWork(shib_modified);
   let res=updateAllScheduleSheetsWindowsReportWork(shib_modified);
   checkLog('mail', 'windows report',gp.shibutz_mail_to);
 }
@@ -1430,9 +1431,167 @@ function createScheduleWindowsReportMain(){
 }
 
 function tstHoles(){
-  let win_ss=SpreadsheetApp.openById('16Pig1bcyguk_yJlFZM9Jon8ygskxjYR4Y8jrdUdmhDM');
-  let sh=SpreadsheetApp.openById('1-VZOYe-sITfOgkDFEWAewEKZKGlnY9yXRCFoRaw-v_g').getSheetByName('26 25/11/22');
-  createScheduleWindowsReport(win_ss,sh);
+  collectParams();
+  //let win_ss=SpreadsheetApp.openById('16Pig1bcyguk_yJlFZM9Jon8ygskxjYR4Y8jrdUdmhDM');
+  let sh=SpreadsheetApp.openById('1-VZOYe-sITfOgkDFEWAewEKZKGlnY9yXRCFoRaw-v_g').getSheetByName('3 27/12/22');
+  colorScheduleWindows(sh);
+}
+
+function ColorCurrentSheetWindowRows(){
+  let sh=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  //Logger.log('updateShibCurrSheet shnm='+shnm);
+  collectParams();
+  let res=colorScheduleWindows(sh);
+  checkLog();
+}
+
+function updateAllScheduleSheetsWindowsColorsMain(){
+  //Logger.log('updateShibCurrSheet shnm='+shnm);
+  collectParams();
+  let lastUpdated = DriveApp.getFileById(gp.shibutz_file_id).getLastUpdated();
+  let dt= new Date(); 
+  let shib_modified=0;
+  Logger.log('now='+dt+' lastUpdated'+lastUpdated+" diff="+(dt.getTime() - lastUpdated.getTime())/(1000*60));
+  if (dt.getTime() - lastUpdated.getTime() > 57*60*1000){//hasnt changed in last X min
+    return;
+  }
+  Logger.log("has changed");
+  let res=updateAllScheduleSheetsWindowsColorsWork();
+  checkLog();
+}
+
+function updateAllScheduleSheetsWindowsColorsWork() {
+  let dts=getDtsOfSheetsToWorkOn(30,1,1);
+  for (let i=0; i<dts.length;i++){
+  //for (let i=0; i<1;i++){
+    let sh=getShibutzSS().getSheetByName(dts[i]);
+    // sh=SpreadsheetApp.openById('1-VZOYe-sITfOgkDFEWAewEKZKGlnY9yXRCFoRaw-v_g').getSheetByName('4 28/12/22');
+    Logger.log('color  dts[i]='+dts[i]+' shnm='+sh.getName());
+    colorScheduleWindows(sh);
+  }
+}
+
+function colorScheduleWindows(sh){
+  let shnm=sh.getName();
+  let rng_color=sh.getRange(2,5,sh.getLastRow()-1,11);
+  //Logger.log(' last row='+sh.getLastRow());
+  let rows=sh.getRange(2,1,sh.getLastRow()-1,16).getValues();
+  let result=getSchedRows2Color(rows);
+  Logger.log('gotSchedRows2Color');
+  //Logger.log('gotSchedRows2Color result ='+JSON.stringify(result));
+  if (!result || ! result.color_rows.length) {
+    return;
+  }
+  rng_color.setBackground('#98ed98');//green
+  let txt_col=[];
+  let last_row=sh.getLastRow();
+  txt_col[last_row-2]=['',''];
+  //Logger.log('LAST ROW='+last_row);
+  txt_col.fill(['','']);
+  for (let i=0;i<result.color_rows.length;i++){
+    sh.getRange(result.color_rows[i][0]+2,5,1,11).setBackground((result.color_rows[i][1] == 'blue') ? '#98e4ed' : '#f4eaa4'); //false=brown
+    txt_col[result.color_rows[i][0]]=[result.color_rows[i][1],''];
+  }
+  Logger.log('have set colors');
+  //Logger.log('txt_col len='+txt_col.length+' txt_col='+JSON.stringify(txt_col));
+  let rng=sh.getRange(2,18,last_row-1,2);
+  rng.setValues(txt_col);
+  Logger.log('have set colors text');
+  //Logger.log('US rows='+JSON.stringify(rows));
+}
+
+function flagPermanentMeetings(sh, txt_col){
+  let last_row=sh.getLastRow();
+  let recur_hash=getRecurhash();
+  let key_rng=sh.getRange(2,1,last_row-1,3).getValues();
+  key_rng.forEach((e, i) => {})
+}
+
+function getSchedRows2Color(rows){
+  rows.forEach((e, i) => e.push(i));
+  rows.sort((a, b) => {
+      if (a[2]>b[2]){ return 1;}
+      if (a[2]<b[2]){ return -1;}
+      if (a[0]>b[0]){ return 1;}				
+      if (a[0]<b[0]){ return -1;}
+      if (a[1]>b[1]){ return 1;}				
+      if (a[1]<b[1]){ return -1;}      
+      return 0;
+    }  
+  );
+  Logger.log('have sorted');
+  return findSchduleRowsColor(rows);
+}
+
+ function findSchduleRowsColor(rows){
+    let rows2color=[];
+    let wrkr={};
+    //Logger.log('S rows='+JSON.stringify(rows));
+    let prev_wrkr=rows[0][2];
+    rows.push([,,'dummy wrkr',,'dummy subj',,]);
+    for (let i=0;i<rows.length;i++){
+      //Logger.log('for i='+i+' rows[i]='+rows[i]);
+      let cur_wrkr=rows[i][2];
+      if (prev_wrkr==cur_wrkr){
+        wrkr.name=cur_wrkr;
+        if ( wrkr.first_row == null) {
+          wrkr.first_row=i;
+        }
+        if (wrkr.first_lesson == null && rows[i][4]){
+          wrkr.first_lesson=i;
+        }
+        if (rows[i][4]){
+          wrkr.last_lesson=i;
+        }
+      } else {
+        wrkr.last_row=i-1;       
+        addWrkrColorRows(rows, wrkr, rows2color);
+        wrkr={};
+        prev_wrkr=cur_wrkr;
+        i--;
+      }
+    }
+    return {'color_rows' : rows2color};
+  }
+
+function addWrkrColorRows(rows, wrkr, rows2add){
+  //Logger.log('wrkr='+JSON.stringify(wrkr));
+  //Logger.log('b rows2add='+JSON.stringify(rows2add));
+  if (!wrkr.name) { return;}
+  let win_formula=getWorkerByName(wrkr.name).win_formula;
+  if (wrkr.first_lesson == null &&  win_formula != 'any_hour') {return;}
+  if (win_formula == 'from1st_hour'){
+    //Logger.log('wrkr win_formula');
+    wrkr.first_lesson=wrkr.first_row-1;
+  }
+  let column=rows[0].length -1;
+  if ( win_formula != 'any_hour' && wrkr.first_lesson > wrkr.first_row) {
+    //Logger.log('first_lesson -1 real row='+rows[wrkr.first_lesson -1][column]);
+    rownum=rows[wrkr.first_lesson -1][column];
+    rows2add.push([rownum,'brown']);
+  }
+  let i=wrkr.first_lesson+1;
+  let max=wrkr.last_lesson;
+  if (win_formula == 'any_hour') {
+    i= wrkr.first_row;
+    max=wrkr.last_row+1;
+  }
+  for (; i<max; i++){
+    if (! rows[i][4]){
+      let color='brown';
+      //Logger.log('for push i='+i+'real row='+rows[i][column]);
+      if (win_formula != 'any_hour' || (wrkr.last_lesson && (i>wrkr.first_lesson && i<wrkr.last_lesson))) {
+        color='blue';
+        //Logger.log('win reala row= ='+(rows2add.length - 1));
+      }
+      rows2add.push([rows[i][column], color]);
+    }
+  }
+  if ( win_formula != 'any_hour' && wrkr.last_lesson < wrkr.last_row) {
+    rows2add.push([rows[wrkr.last_lesson +1][column],'brown']);
+    //Logger.log('next hour real row='+rows[wrkr.last_lesson +1][column]);
+  }
+  //Logger.log('e rows2add='+JSON.stringify(rows2add));
 }
 
 function createScheduleWindowsReport(win_ss,sh,shib_modified){
@@ -1550,25 +1709,3 @@ function addWrkrWinRows(rows, wrkr, rows2add, windows){
   }
   //Logger.log('e rows2add='+JSON.stringify(rows2add));
 }
-
-function addWrkrWinRows3(rows, wrkr, rows2add, windows){
-  Logger.log('wrkr='+JSON.stringify(wrkr));
-  if (wrkr.first_lesson == null) {return;}
-  if (getWorkerByName(wrkr.name).win_formula == 'from1st_hour'){
-    //Logger.log('wrkr win_formula');
-    wrkr.first_lesson=wrkr.first_row-1;
-  }
-  if ( wrkr.first_lesson > wrkr.first_row) {
-    rows2add.push(rows[wrkr.first_lesson -1]);
-  }
-  for (let i=(wrkr.first_lesson+1); i<(wrkr.last_lesson); i++){
-    if (! rows[i][4]){
-      rows2add.push(rows[i]);
-      windows.push(rows2add.length - 1);
-    }
-  }
-  if ( wrkr.last_lesson < wrkr.last_row) {
-    rows2add.push(rows[wrkr.last_lesson +1]);
-  }
-}
-
