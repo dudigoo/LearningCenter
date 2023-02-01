@@ -160,30 +160,31 @@ function writeLog(msg) {
 function checkLog(action,subj,to){
   Logger.log('checkLg errs action='+action+' subj='+' to='+to );
   //writeLog('End');
-  if (! subj){
-    subj='Shibutz errors';
-  }
   if (! to){
     to='mlemida.ryam@gmail.com';
   } else {
     to=to+',mlemida.ryam@gmail.com'
   }
   //Logger('gp.scripts_log_sh.getRange("C4").getValue()='+gp.scripts_log_sh.getRange('C4').getValue());
-  if (gp.log_msgs.length) {
-    Logger.log('ERRORS num='+gp.log_msgs.length+' msgs='+JSON.stringify(gp.log_msgs));
-    writeLog('End');
-    getLogsh().getRange(3,3,gp.log_msgs.length,1).setValues(gp.log_msgs);
-    Logger.log('has errs' );
-    if (action == 'mail'){
-      //var r=gp.scripts_log_sh.getRange(3, 3, gp.scripts_log_sh.getLastRow()-2, 1);
-      var me=gp.log_msgs.join("\n");
-      MailApp.sendEmail(to, subj,  me);
-      Logger.log('Sent mail=' + me );
-    } else {
-      Logger.log('setActiveSheet log' );
-      var ss=SpreadsheetApp.getActive();
-      ss.setActiveSheet(ss.getSheetByName('log'));
+  if (! gp.log_msgs.length) {
+    return;
+  }
+  Logger.log('ERRORS num='+gp.log_msgs.length+' msgs='+JSON.stringify(gp.log_msgs));
+  writeLog('End');
+  //Logger.log('has errs' );
+  if (action == 'mail'){
+    //var r=gp.scripts_log_sh.getRange(3, 3, gp.scripts_log_sh.getLastRow()-2, 1);
+    if (! subj){
+      subj='Shibutz errors';
     }
+    var me=gp.log_msgs.join("\n");
+    MailApp.sendEmail(to, subj,  me);
+    Logger.log('Sent mail=' + me );
+  } else {
+    getLogsh().getRange(3,3,gp.log_msgs.length,1).setValues(gp.log_msgs);
+    Logger.log('setActiveSheet log' );
+    var ss=SpreadsheetApp.getActive();
+    ss.setActiveSheet(ss.getSheetByName('log'));
   }
 }
 
@@ -281,6 +282,7 @@ function collectParams(col) {
 }
 
 function chomp(raw_text){
+  //Logger.log('raw_text='+raw_text);
   raw_text=raw_text.replace(/ *, */g, ',').replace(/,,/g, ',').replace(/  /g, ' ').replace(/[, ]+$/, '');
   return raw_text.replace(/^\s+/, '');
 }

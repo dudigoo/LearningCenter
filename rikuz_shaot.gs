@@ -2,7 +2,7 @@
 var month_row = { 9 : 3, 10 : 4 , 11 : 5, 12 : 6 , 1 : 7, 2 : 8 , 3 : 9 , 4 : 10 , 5 : 11 , 6 : 12 , 7 : 13, 8 : 14};
 
 function updateRikuz(name, hours, snm, monthnum) {
-  //Logger.log('updateRikuz hours='+ hours + ' name='+name + ' snm='+snm + ' monthnum='+monthnum);
+  Logger.log('updateRikuz hours='+ hours + ' name='+name + ' snm='+snm + ' monthnum='+monthnum);
   if (! month_row[monthnum]){
     writeLog('invalid month number for: '+name);
     return;
