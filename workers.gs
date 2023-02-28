@@ -570,3 +570,25 @@ function getSelectedMeetingDetails(){
   ret.sh2look= (today>md[1]) ? 'history' : 'allDays';
   return ret;
 }
+
+function setFormEditUrls() {
+  collectParams();
+  let ss=SpreadsheetApp.openById(gp.zminut_file_id);
+  let formx=ss.getFormUrl();
+  let form = FormApp.openByUrl(formx);
+  let sheet=ss.getSheetByName('Form responses 1');
+  let data = sheet.getDataRange().getValues();
+  Logger.log('form='+form);
+  let responses = form.getResponses();
+  let timestamps = [], urls = [], resultUrls = [];
+  
+  for (let i = 0; i < responses.length; i++) {
+    timestamps.push(responses[i].getTimestamp().setMilliseconds(0));
+    urls.push(responses[i].getEditResponseUrl());
+  }
+  for (let j = 1; j < data.length; j++) {
+    resultUrls.push([data[j][0]?urls[timestamps.indexOf(data[j][0].setMilliseconds(0))]:'']);
+  }
+  sheet.getRange(2,15,data.length-1,1).setValues(resultUrls);
+  //return resultUrls;  
+}

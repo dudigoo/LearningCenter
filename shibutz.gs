@@ -113,11 +113,11 @@ function getArchAction(nm,dts){ //tabname
 }
 
 function shibutzDates() {
-  if (fileHasOpenComment(gp.shibutz_file_id)){
+ /* if (fileHasOpenComment(gp.shibutz_file_id)){
     let msg='** File shibutz has open comments. Not updating'
     writeLog(msg);
     return msg;
-  }
+  }*/
   var dts=chomp(gp.shib_dates).split(",");
   Logger.log('dtsb='+gp.shib_dates);
   //return; //mmm
@@ -570,6 +570,9 @@ function cpMeetings(old_sh,wrk_a,dt){
 function addExistingMeeting(meeting, wrk_a, sh,date){
   var i=findRecRow(wrk_a, meeting.slice(0,3))
   if (i>-1){
+    if (rowIsBusy(wrk_a,i)){
+      writeLog('* Meeting wins a recur row. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
+    }
     wrk_a[i]=meeting;
   } else if (isWorkerAvailable(meeting[2], date, meeting[0], meeting[1])){
     let w=getWorkerByName(meeting[2]);
@@ -578,6 +581,14 @@ function addExistingMeeting(meeting, wrk_a, sh,date){
     writeLog('* Missing row for meeting. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
     //writeLog('* Missing row for meeting. sheet='+sh.getName()+' meeting:'+JSON.stringify(meeting));
   }
+}
+
+function rowIsBusy(wrk_a,i){
+  let ar=wrk_a[i].slice(5,11);
+  if (ar.every(element => element === "")){
+    return false;
+  }
+  return true;
 }
 
 function fillTmRngs(wrk_a,dt, dt_str){
@@ -742,7 +753,7 @@ function loadZminutSh() {
         let ar=gp.zmin_rngs[i][8].toString().split(',');
         let time_ar=[];
         for (let j=0;j<ar.length;j++){
-          //Logger.log(' ar[j] ='+ar[j]);
+          Logger.log('j='+j+' ar[j]='+ar[j]);
           if (ar[j].length<6){
             writeLog('invalid unavail date='+ar[j]+ ' full='+gp.zmin_rngs[i][8]);
           } else {
@@ -975,7 +986,7 @@ function getSchedWrkrRows(nm, hist, group, lvl, all_hours) {
   values.forEach(e => e.splice(9,99));
   //Logger.log('valx3='+JSON.stringify(values) );
   if (hist=='y'){
-    values.splice(0,values.length-1000);
+    //values.splice(0,values.length-1000);
     values.reverse();
   }
   //Logger.log('7='+values[1][7]);
@@ -1127,7 +1138,8 @@ function collectDatesMetaAr(dts, ar,addpday) {
     let rows=sh.getLastRow()-1;//=ARRAYFORMULA('1 27/3/22'!A2:Q)
     let dt=dts[i].replace(/\d /,'');//tabname
     let f1='=ARRAYFORMULA({"'+dts[i]+'"&Y1:Y'+(rows+addpday)+"})";  //=ArrayFormula({"27/3/22"&Y2:Y500})
-    let f2="=ARRAYFORMULA('"+dts[i]+"'!A2:R"+(rows+1)+")";
+    //let f2="=ARRAYFORMULA('"+dts[i]+"'!A2:R"+(rows+1)+")";
+    let f2="=ARRAYFORMULA('"+dts[i]+"'!A2:R"+(rows+1+addpday)+")";
     //Logger.log('collect rows='+rows+' row2set='+row2set+' dt='+dt+' shnm='+sh.getName());
     ar.push([row2set,rows,f1,f2]);
     row2set+=rows;
@@ -1236,7 +1248,11 @@ function sendMailReminder(mail,msg, name) {
         subject: msg,
         htmlBody: '<p dir=RTL>'+body+'</p>'
   }
-  MailApp.sendEmail(em);
+  try {
+    MailApp.sendEmail(em);
+  } catch (e) {
+    writeLog('couldnt send mail. name='+name+' mail='+mail+' e='+e);
+  }    
 }
 
 function remindMeeting(meet_ar) {
@@ -1403,6 +1419,16 @@ function pupilSchedSheetMistakes(alfon_qry,shib_dt_qry,shib_sh_nm) {
   let res=arItemsNotInAnotherAr(ar1.flat(), ar2.flat(), 1);
 }
 
+function tstUpdateShibCurrSheet(){
+  let shnm='4 1/3/23';
+  //Logger.log('updateShibCurrSheet shnm='+shnm);
+  collectParams();
+  gp.shib_dates=getDtStrFromShNm(shnm);
+  //Logger.log('gp.shib_dates='+gp.shib_dates);
+  let res=shibutzDates();
+  checkLog('mail', 'schedule issue',gp.shibutz_mail_to);
+}
+
 function updateShibCurrSheet(){
   let shnm=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName();
   //Logger.log('updateShibCurrSheet shnm='+shnm);
@@ -1421,7 +1447,7 @@ function updateShibCurrSheet(){
 function tstHoles(){
   collectParams();
   //let win_ss=SpreadsheetApp.openById('16Pig1bcyguk_yJlFZM9Jon8ygskxjYR4Y8jrdUdmhDM');
-  let sh=SpreadsheetApp.openById('15yqB8oiaNO6qULE_9DygdKyXKBaYoT705900s8XG3E4').getSheetByName('1 12/2/23');
+  let sh=SpreadsheetApp.openById('1-VZOYe-sITfOgkDFEWAewEKZKGlnY9yXRCFoRaw-v_g').getSheetByName('4 22/2/23');
   colorScheduleWindows(sh);
 }
 
@@ -1440,10 +1466,10 @@ function updateAllScheduleSheetsWindowsColorsMain(){
   let dt= new Date(); 
   let shib_modified=0;
   //Logger.log('now='+dt+' lastUpdated'+lastUpdated+" diff="+(dt.getTime() - lastUpdated.getTime())/(1000*60));
-  if (dt.getTime() - lastUpdated.getTime() > 61*60*1000){//hasnt changed in last X min
+  if (dt.getTime() - lastUpdated.getTime() > 59*60*1000){//hasnt changed in last X min
     return;
   }
-  //Logger.log("has changed");
+  Logger.log("has changed");
   let res=updateAllScheduleSheetsWindowsColorsWork();
   checkLog();
 }
@@ -1483,8 +1509,8 @@ function colorScheduleWindows(sh){
   let col_vec=['#fbf5f0','#98eded','#98ed98']; // off-white, blue, green
   //Logger.log('color_rng all3='+JSON.stringify(color_rng));
   for (let i=0; i<col_vec.length;i++){
-    //Logger.log('i='+i +' rng list='+JSON.stringify(color_rng[i]));
     if (color_rng[i].length){
+      //Logger.log('i='+i +' rng list='+JSON.stringify(color_rng[i]));
       sh.getRangeList(color_rng[i]).setBackground(col_vec[i]);
     }
   }
@@ -1520,7 +1546,7 @@ function analyseColorRanges(color_rows,last_row){
 }
 
 function mkL1Rng(a,b){
-  return 'D'+a+':O'+b;
+  return 'E'+a+':O'+b;
 }
 
 function getComplementAray(all,last_row){
