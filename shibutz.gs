@@ -130,8 +130,8 @@ function shibutzDates() {
   Logger.log('S updateAllDatesSheetWork');
   updateAllDatesSheetWork();
   Logger.log('E updateAllDatesSheetWork');
-  //clearRecurPastStartDate();zzz
-  //deleteObsoleteRecurRows(); zzz
+  clearRecurPastStartDate();//zzz
+  deleteObsoleteRecurRows(); //zzz
 }
 
 function getShibWorkSh() { 
@@ -402,7 +402,7 @@ function setPermanentComment(fld) {
 
 function setRecurMeet(wrk_a,recur,rrow, date) {
   let i=findRecRow(wrk_a,recur.slice(1,4));
-  if (i>-1){
+  if (i>-1){ 
     //Logger.log('set Recur Meet i='+i+' setRecurMeet rec:' + rrow );//qqq
     //Logger.log('wrk_a[i] len b='+wrk_a[i].length + ' wrk_a[i]='+wrk_a[i]);
     //Logger.log('wrk_a[i] len b='+wrk_a[i].length + ' wrk_a[i]='+wrk_a[i]);
@@ -422,6 +422,7 @@ function setRecurMeet(wrk_a,recur,rrow, date) {
     writeLog('* Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur);
   }
 }
+
 
 function removeOverlapTmpltRows(wrk_a, wnm, frtm, totm) {
   //Logger.log('rm overlap wnm='+wnm+' frtm='+frtm+' totm='+totm);
@@ -1420,9 +1421,10 @@ function pupilSchedSheetMistakes(alfon_qry,shib_dt_qry,shib_sh_nm) {
 }
 
 function tstUpdateShibCurrSheet(){
-  let shnm='4 1/3/23';
+  let shnm='4 8/3/23';
   //Logger.log('updateShibCurrSheet shnm='+shnm);
   collectParams();
+  //gp.paint_recur_rows='y';
   gp.shib_dates=getDtStrFromShNm(shnm);
   //Logger.log('gp.shib_dates='+gp.shib_dates);
   let res=shibutzDates();
