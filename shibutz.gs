@@ -1311,8 +1311,31 @@ function findAllGroupsSchedMistakesMain(){
   writeLog('** Check recur worker overlaps');
   findWorkerOvelappingMeetings("recur");
   writeLog('** Find pupils with 2 lessons at the same time');
-  findPupilWith2LessonsSameTime();  
+  findPupilWith2LessonsSameTime(); 
+  writeLog('** Find invalid pupils names');
+  findInvalidPupilsNames(); 
   checkLog('mail', 'schedule mistakes',gp.shibutz_mail_to);
+}
+
+function findInvalidPupilsNames() {
+  var pupils_a = querySheet("select J,K,L,M,N,O,P where F != ''",gp.shibutz_file_id,'allDays',1).flat();
+  let groups = getGroupsDict();
+  pupils_a.forEach((e) => {
+    if(e != '' && !getStuAr(e) && !groups.hasOwnProperty(e)) {
+      writeLog('unknown allDays student: '+ e);
+    }
+  });
+  pupils_a = querySheet("select I,J,K,L,M,N,O where D != ''",gp.shibutz_file_id,'recur',1).flat();
+  pupils_a.forEach((e) => {
+    if(e != '' && !getStuAr(e) && !groups.hasOwnProperty(e)) {
+      writeLog('unknown recur student: '+ e);
+    }
+  });
+}
+
+function tstfindInvalidPupilsNames() {
+  collectParams();
+  findInvalidPupilsNames();
 }
 
 function tstfindPupilWith2LessonsSameTime(){

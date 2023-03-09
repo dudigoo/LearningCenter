@@ -7,7 +7,7 @@ function getStuAr(s) {
     gp.all_pupils_map=getAllPupilsMap();
   }
   if (!gp.all_pupils_map[s]){
-    writeLog('unknown student:'+ s);
+    //writeLog('unknown student:'+ s);
     return;
   }
   //Logger.log('**********stu='+s);
