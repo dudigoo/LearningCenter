@@ -5,6 +5,13 @@ var dowrmap={'א':'0', 'ב':'1', 'ג':'2', 'ד':'3', 'ה':'4','ו':'5','ז':'6'}
 var gv_wrkr_view_tab_color='#1129e9';
 var permanent="קבוע";
 
+function tstArr() {
+  //Logger.log('locale 3='+gp.locale);
+  collectParams();
+  let sh=getShibutzSS().getSheetByName('3 28/3/23');
+  sh.getRange('Q102').setValue('');
+}
+
 function fillShibutzMain() {// 22/12/20,24/12/20
   //Logger.log('locale 3='+gp.locale);
   collectParams();
@@ -67,7 +74,7 @@ function copyDtSh2Hist(sh){
     gp.shib_history_sh=getShibutzSS().getSheetByName('history');
   }
   let rows=sh.getLastRow()-1;
-  let cols=15;
+  let cols=18;//include color col
   let ar=sh.getRange(2,5,rows,cols-4).getValues();
   let hist_ilr=gp.shib_history_sh.getLastRow()+1;
   let hist_lr=hist_ilr;
@@ -132,13 +139,6 @@ function shibutzDates() {
   Logger.log('E updateAllDatesSheetWork');
   clearRecurPastStartDate();//zzz
   deleteObsoleteRecurRows(); //zzz
-}
-
-function getShibWorkSh() { 
-  if (! gp.shibutz_work_sh){
-    gp.shibutz_work_sh=getShibutzSS().getSheetByName('work');
-  }
-  return gp.shibutz_work_sh;
 }
 
 function orderShibSheets() { 
@@ -321,7 +321,7 @@ function getShibRecurAr() {
   return gp.shib_recur_ar;
 }
 
-function addRecurring(wrk_a,dt) {
+function addRecurring(wrk_a,dt,oldall) {
   let dow=dt.getDay();
   //Logger.log('addRecuring dt='+dt);
   let leng=getShibRecurAr().length;
@@ -331,7 +331,7 @@ function addRecurring(wrk_a,dt) {
     //Logger.log('dow='+ dow+ ' recur_row[0]='+recur_row[0]+ ' dowmap[dow]='+dowmap[dow]);
     if ((recur_row[0] == dowmap[dow]) && isDtInRng(dt,recur_row[16],recur_row[17])){
       //Logger.log('recur_row[0] == dowmap[dow]');
-      setRecurMeet(wrk_a,recur_row,i+2,dt);
+      setRecurMeet(wrk_a,recur_row,i+2,dt,oldall);
     }
   }
 }
@@ -400,36 +400,53 @@ function setPermanentComment(fld) {
   return fld;
 }
 
-function setRecurMeet(wrk_a,recur,rrow, date) {
+function setRecurMeet(wrk_a,recur,rrow, date,oldall) {
   let i=findRecRow(wrk_a,recur.slice(1,4));
   if (i>-1){ 
     //Logger.log('set Recur Meet i='+i+' setRecurMeet rec:' + rrow );//qqq
     //Logger.log('wrk_a[i] len b='+wrk_a[i].length + ' wrk_a[i]='+wrk_a[i]);
     //Logger.log('wrk_a[i] len b='+wrk_a[i].length + ' wrk_a[i]='+wrk_a[i]);
     //wrk_a[i]=wrk_a[i].concat(recur.slice(4,16));
-    wrk_a[i]=wrk_a[i].slice(0,4).concat(recur.slice(4,15)).concat([permanent]);
+    wrk_a[i]=wrk_a[i].slice(0,4).concat(recur.slice(4,15)).concat([permanent,,'']);
     wrk_a[i][5]=setPermanentComment(wrk_a[i][5]);
     //Logger.log('wrk_a[i] len a='+wrk_a[i].length );
-  } else if (isWorkerAvailable(recur[3], date, recur[1], recur[2])){
+  } else {
     //Logger.log('not in template but available'); //qqq
     let w=getWorkerByName(recur[3])
     //let z=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16)));
     //Logger.log('z='+JSON.stringify(z));
     //wrk_a.push(z);
-    wrk_a.push(recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16))));
-    removeOverlapTmpltRows(wrk_a,recur[3], recur[1], recur[2]);
-  } else {
-    writeLog('* Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur);
+    let is_avail=isWorkerAvailable(recur[3], date, recur[1], recur[2]);
+    let ar=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,15)));
+    let in_old=-2;
+    if (!is_avail){
+      ar=ar.concat([permanent,,'red']);
+      //Logger.log('recur len='+recur.length);
+      //writeLog('* Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur.slice(0,recur.length-1));
+      in_old=findRecRow(oldall,recur.slice(1,4));
+    }
+    //Logger.log('in_old='+in_old);
+    //if (in_old>-1) { Logger.log(oldall[in_old][4])}
+    let taken_care='טופל';
+    if (in_old>-1 && oldall[in_old][4] == taken_care){//taken care by auditor => dont override
+      ar[4]=taken_care;
+      ar=ar.fill('',5,15);
+    }
+    wrk_a.push(ar);
+    //Logger.log('wrk_a ='+JSON.stringify( wrk_a));    
+    if (is_avail){
+      removeOverlapTmpltRows(wrk_a,recur[3], recur[1], recur[2]);
+    }
+    //Logger.log('wrk_a 2='+JSON.stringify( wrk_a));  
   }
 }
-
 
 function removeOverlapTmpltRows(wrk_a, wnm, frtm, totm) {
   //Logger.log('rm overlap wnm='+wnm+' frtm='+frtm+' totm='+totm);
   for (let i=0; i<wrk_a.length; i++){
     //Logger.log('ck i='+i+' wrk_a[i][15]='+wrk_a[i][15]+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
     if (! wrk_a[i][15] && wrk_a[i][2] == wnm && ((frtm >= wrk_a[i][0] && frtm <wrk_a[i][1]) || (totm > wrk_a[i][0] && totm <= wrk_a[i][1]))){
-      //Logger.log('removing i='+i+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
+      Logger.log('removing i='+i+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
       wrk_a.splice(i--,1);
     }
   }
@@ -499,11 +516,12 @@ function fillShibDt(date) {
   }
   Logger.log('s fillTmRngs shnm='+shnm);
   fillTmRngs(wrk_a,dt, date);
+  let oldall=getShRows(dt_sh);
   Logger.log('s addRecurring');
-  addRecurring(wrk_a,dt);
+  addRecurring(wrk_a,dt,oldall);
   if (dtsh_exist){
     Logger.log('s cpMeetings');
-    cpMeetings(dt_sh,wrk_a,dt);
+    cpMeetings(oldall,dt_sh,wrk_a,dt);
     Logger.log('e cpMeetings');
   }
   //Logger.log('wrk_a ='+JSON.stringify(wrk_a));
@@ -522,8 +540,18 @@ function wrkAr2DtSh(wrk_a,dt_sh, dtsh_exist) {
   if (a[2]>b[2]){ return 1;}				
   if (a[2]<b[2]){ return -1;}
   return 0;
-} );  
-  
+} );
+
+  let red_rngs_ar=[];
+  wrk_a.forEach((e,i) => {
+    for (let i=e.length; i<18;i++){
+      e.push('');
+    };
+    if (e[17]=='red'){
+      red_rngs_ar.push('A'+(i+2)+':C'+(i+2));
+    }
+    //Logger.log('e16='+e[16]+' e17='+e[17]+' e18='+e[18])
+  });
   let rows2add;
   if (dtsh_exist){
     rows2add=wrk_a.length-dt_sh.getMaxRows()+21;
@@ -541,8 +569,11 @@ function wrkAr2DtSh(wrk_a,dt_sh, dtsh_exist) {
   //dt_sh.insertRowsAfter(3, wrk_a.length)
   //Logger.log('wrk_a='+JSON.stringify(wrk_a));
   dt_sh.getRange(2,1,wrk_a.length, wrk_a[0].length).setValues(wrk_a);
+  dt_sh.getRange(2,1,wrk_a.length, 3).setBackground(gp.colors.light_grey);
+  if (red_rngs_ar.length){
+    dt_sh.getRangeList(red_rngs_ar).setBackground(gp.colors.red);//red
+  }
   Logger.log('e wrkAr2DtSh');
-
 }
 
 function getTmplHrs(dt) { 
@@ -553,17 +584,21 @@ function getTmplHrs(dt) {
   return hrs;
 }
 
-function cpMeetings(old_sh,wrk_a,dt){
-  let oldrows=old_sh.getLastRow();
-  if (oldrows<2){return}
-  let oldall=old_sh.getRange(2,1,oldrows-1,16).getValues();
+function getShRows(sh){
+  let last_row=sh.getLastRow();
+  if (last_row<2){return}
+  let rows=sh.getRange(2,1,last_row-1,18).getValues();
+  return rows;
+}
+
+function cpMeetings(oldall,old_sh, wrk_a,dt){
   for (i=0;i<oldall.length;i++){
     let ar=oldall[i].slice(5,11);
     if (ar.every(element => element === "") || oldall[i][15] == permanent){//skip empty or recur row. 
       continue;
     }
     //Logger.log('i='+i);
-    let res=addExistingMeeting(oldall[i],wrk_a, old_sh,dt);
+    let res=addExistingMeeting(oldall[i].slice(0,16),wrk_a, old_sh,dt);
     //Logger.log(' res='+res);
   }
 }
@@ -577,7 +612,8 @@ function addExistingMeeting(meeting, wrk_a, sh,date){
     wrk_a[i]=meeting;
   } else if (isWorkerAvailable(meeting[2], date, meeting[0], meeting[1])){
     let w=getWorkerByName(meeting[2]);
-    wrk_a.push(meeting.slice(0,16));
+    //wrk_a.push(meeting.slice(0,16));
+    wrk_a.push(meeting);
   } else {
     writeLog('* Missing row for meeting. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
     //writeLog('* Missing row for meeting. sheet='+sh.getName()+' meeting:'+JSON.stringify(meeting));
@@ -625,7 +661,8 @@ function fillNames(wrk_a,r,wrkrs,frtm,totm){
   //Logger.log(' r='+r+' wrkrs.length='+wrkrs.length);
   wrkrs.forEach( e => {
     let ws=getArrWSubj(e);
-    wrk_a.push([frtm,totm,ws[0], ws[1] ,'','','','','','','','','','','',''])
+    //wrk_a.push([frtm,totm,ws[0], ws[1] ,'','','','','','','','','','','',''])
+    wrk_a.push([frtm,totm,ws[0], ws[1] ,'','','','','','','','','','','','','',''])//18
   });
 }
 
@@ -962,9 +999,9 @@ function getSchedWrkrRows(nm, hist, group, lvl, all_hours) {
   let query;
   // all_hours=1;
   if (all_hours){
-    query='select A, B, C, D, F, G, H, I, J, K, L, M';
+    query='select A, B, C, D, F, G, H, I, J, K, L, M where S != "red"';
   } else {
-    query = 'select A, B, C, D, F, G, H, I, J, K, L, M where (F != "" or G !="" or H !="" or I !="" or J !="" or K !="" or L !="" or M !="" or N !="")';
+    query = 'select A, B, C, D, F, G, H, I, J, K, L, M where (F != "" or G !="" or H !="" or I !="" or J !="" or K !="" or L !="" or M !="" or N !="") and S != "red"';
   }
   let shnm='allDays';
   if (hist=='y'){
@@ -1077,7 +1114,7 @@ function getPupRows(nm,targetSheet) {
   }
   Logger.log('nm= '+nm);
  
-  query = 'select A, B, C, F, D, G where (T matches ".*,('+nm+'),.*")';  
+  query = 'select A, B, C, F, D, G where (S != "red" and T matches ".*,('+nm+'),.*")';  
   Logger.log('query= '+query);
   let values=[];
   for (let i=0;i<targetSheet.length;i++){
@@ -1311,7 +1348,7 @@ function findAllGroupsSchedMistakesMain(){
   writeLog('** Check recur worker overlaps');
   findWorkerOvelappingMeetings("recur");
   writeLog('** Find pupils with 2 lessons at the same time');
-  findPupilWith2LessonsSameTime(); 
+  findPupilWith2LessonsSameTime();
   writeLog('** Find invalid pupils names');
   findInvalidPupilsNames(); 
   checkLog('mail', 'schedule mistakes',gp.shibutz_mail_to);
@@ -1337,6 +1374,7 @@ function tstfindInvalidPupilsNames() {
   collectParams();
   findInvalidPupilsNames();
 }
+
 
 function tstfindPupilWith2LessonsSameTime(){
   collectParams();
@@ -1512,7 +1550,15 @@ function updateAllScheduleSheetsWindowsColorsWork() {
 
 function colorScheduleWindows(sh){
   //Logger.log(' last row='+sh.getLastRow());
-  let rows=sh.getRange(2,1,sh.getLastRow()-1,16).getValues();
+  let rows=sh.getRange(2,1,sh.getLastRow()-1,18).getValues();
+  red_rows=[];
+  rows.forEach((e,i) => {
+    //Logger.log('e[17] ='+e[17]);
+    if (e[17]=='red'){
+      red_rows.push(i+2);
+    }
+  })
+  //Logger.log('red_rows ='+JSON.stringify(red_rows));
   let result=getSchedRows2Color(rows);
   //Logger.log('gotSchedRows2Color');
   //Logger.log('gotSchedRows2Color result ='+JSON.stringify(result));
@@ -1521,17 +1567,21 @@ function colorScheduleWindows(sh){
   }
   let last_row=sh.getLastRow();
   let txt_col=[];
-  txt_col[last_row-2]=['',''];
+  txt_col[last_row-2]=[''];
   //Logger.log('LAST ROW='+last_row);
-  txt_col.fill(['','']);
+  txt_col.fill(['']);
   //Logger.log('result.color_rows='+JSON.stringify(result.color_rows));
-  let color_rng=analyseColorRanges(result.color_rows, last_row);
+  let color_rng=analyseColorRanges(result.color_rows, last_row, red_rows);
   //Logger.log('result.color_rows 2='+JSON.stringify(result.color_rows));
+  //Logger.log('result='+JSON.stringify(result));
 
   for (let i=0;i<result.color_rows.length;i++){
-    txt_col[result.color_rows[i][0]]=[result.color_rows[i][1],''];
+    txt_col[result.color_rows[i][0]]=[result.color_rows[i][1]];
   }
-  let col_vec=['#fbf5f0','#98eded','#98ed98']; // off-white, blue, green
+  red_rows.forEach(e => {
+    txt_col[e-2]=['red'];
+  })
+  let col_vec=[gp.colors.off_white, gp.colors.blue, gp.colors.green]; 
   //Logger.log('color_rng all3='+JSON.stringify(color_rng));
   for (let i=0; i<col_vec.length;i++){
     if (color_rng[i].length){
@@ -1540,12 +1590,12 @@ function colorScheduleWindows(sh){
     }
   }
   //Logger.log('txt_col len='+txt_col.length+' txt_col='+JSON.stringify(txt_col));
-  sh.getRange(2,18,last_row-1,2).setValues(txt_col);
+  sh.getRange(2,18,last_row-1,1).setValues(txt_col);
   //Logger.log('have set colors text');
   //Logger.log('US rows='+JSON.stringify(rows));
 }
  
-function analyseColorRanges(color_rows,last_row){
+function analyseColorRanges(color_rows,last_row, red_color_rows){
   let color_rng=[[],[],[]];
   let all=[];
   //Logger.log('analyseR color_rows='+JSON.stringify(color_rows));
@@ -1563,8 +1613,12 @@ function analyseColorRanges(color_rows,last_row){
       color_rng[2].push(rng_nm);
     }
   }
+  Logger.log('all4='+JSON.stringify(all));
+  red_color_rows.forEach((e) => {
+    all.push([e,e]);
+  })
   //Logger.log('color_rng='+JSON.stringify(color_rng));
-  //Logger.log('all='+JSON.stringify(all));
+  //Logger.log('all5='+JSON.stringify(all));
   color_rng[0] = getComplementAray(all, last_row);
   //Logger.log('end analyseR color_rng[0]='+JSON.stringify(color_rng[0]));
   return color_rng;
@@ -1582,15 +1636,17 @@ function getComplementAray(all,last_row){
       } )
   //Logger.log('all sorted='+JSON.stringify(all));
   let ret_ar=[];
-  if (all[0][0] != 2){
+  if (all[0][0] != 2 ){
     ret_ar.push(mkL1Rng(2, all[0][0]));
   }
-  for (let i=0;i<all.length;i++){
+  for (let i=0; i<all.length; i++){
+    //Logger.log('17='+all[i][17]);
+    
     if ((i+1)<all.length && (all[i][1]+1) < all[i+1][0]){
       ret_ar.push(mkL1Rng(all[i][1]+1, all[i+1][0]-1));
     }
   }
-  if ( all[all.length-1][1] < last_row){
+  if ( all[all.length-1][1] < last_row ){
     ret_ar.push(mkL1Rng(all[all.length-1][1]+1, last_row));
   }
   //Logger.log('ret_ar='+JSON.stringify(ret_ar));
@@ -1647,6 +1703,7 @@ function getSchedRows2Color(rows){
     //Logger.log('S rows='+JSON.stringify(rows));
     let prev_wrkr=rows[0][2];
     rows.push([,,'dummy wrkr',,'dummy subj',,]);
+    curr_color_text_ar=[];
     for (let i=0;i<rows.length;i++){
       //Logger.log('for i='+i+' rows[i]='+rows[i]);
       let cur_wrkr=rows[i][2];

@@ -205,6 +205,7 @@ function onOpen(){
 
 function collectParams(col) {
   if (! col){col=2};
+  gp.colors={'off_white':'#fbf5f0', 'blue':'#98eded', 'green':'#98ed98', 'red':'#ecaa9d', 'light_grey':'#f3f3f3'};
   gp.log_msgs=[];
   //Logger.log('container_id='+gp.ms_container_id);
   let params = getScriptGlobalParams(col);
