@@ -249,9 +249,10 @@ function getHTotalHours(tsheet,tw){
 function rikuz2pikuach() {
   collectParams();
   var ro=7;
-  var sh_rik= SpreadsheetApp.openById(gp.nizul_src).getSheetByName('merkaz');
+  var sh_rik= SpreadsheetApp.openById(gp.nizul_src).getSheetByName('accounting');
   var sh_niz= SpreadsheetApp.openById(gp.nizul_tgt).getSheetByName('sheet1');
-  for (var i=3;i<100;i++){
+  let max=sh_rik.getLastColumn()+1;
+  for (var i=3;i<max;i++){
     var nm=sh_rik.getRange(2,i).getValue();
     var h=sh_rik.getRange(15,i).getValue();
     h=Math.round(h);
@@ -272,7 +273,7 @@ function rikuz2pikuach() {
     //sh_niz.getRange(ro,6).setValue(sh_rik.getRange(17,i).getValue() );
     ro++;
     if (nm == 'דותן חן') {
-      break;
+     // break;
     }
   }
   checkLog();

@@ -435,18 +435,21 @@ function setRecurMeet(wrk_a,recur,rrow, date,oldall) {
     wrk_a.push(ar);
     //Logger.log('wrk_a ='+JSON.stringify( wrk_a));    
     if (is_avail){
-      removeOverlapTmpltRows(wrk_a,recur[3], recur[1], recur[2]);
+      removeOverlapTmpltRows(wrk_a,recur[3], recur[1], recur[2], date);
     }
     //Logger.log('wrk_a 2='+JSON.stringify( wrk_a));  
   }
 }
 
-function removeOverlapTmpltRows(wrk_a, wnm, frtm, totm) {
+function removeOverlapTmpltRows(wrk_a, wnm, frtm, totm, dt) {
   //Logger.log('rm overlap wnm='+wnm+' frtm='+frtm+' totm='+totm);
   for (let i=0; i<wrk_a.length; i++){
     //Logger.log('ck i='+i+' wrk_a[i][15]='+wrk_a[i][15]+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
-    if (! wrk_a[i][15] && wrk_a[i][2] == wnm && ((frtm >= wrk_a[i][0] && frtm <wrk_a[i][1]) || (totm > wrk_a[i][0] && totm <= wrk_a[i][1]))){
-      Logger.log('removing i='+i+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
+    if ( wrk_a[i][15] != permanent && wrk_a[i][2] == wnm && ((frtm >= wrk_a[i][0] && frtm <wrk_a[i][1]) || (totm > wrk_a[i][0] && totm <= wrk_a[i][1]))){
+      //Logger.log('removing i='+i+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
+      if (! wrk_a[i].slice(4,10).every(element => element === "") ) {
+        writeLog('Date='+dt.toDateString()+' Dropped overlapping row: '+JSON.stringify(wrk_a[i]));
+      }
       wrk_a.splice(i--,1);
     }
   }
@@ -605,13 +608,16 @@ function cpMeetings(oldall,old_sh, wrk_a,dt){
 
 function addExistingMeeting(meeting, wrk_a, sh,date){
   var i=findRecRow(wrk_a, meeting.slice(0,3))
+  Logger.log('dExistingMeet i='+i+' meeting='+meeting );
   if (i>-1){
     if (rowIsBusy(wrk_a,i)){
       writeLog('* Meeting wins a recur row. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
     }
     wrk_a[i]=meeting;
   } else if (isWorkerAvailable(meeting[2], date, meeting[0], meeting[1])){
-    let w=getWorkerByName(meeting[2]);
+    //let w=getWorkerByName(meeting[2]);
+    //Logger.log(' meeting[0]='+ meeting[0]+' meeting[1]='+meeting[1]+' meeting[2]='+meeting[2]);
+    removeOverlapTmpltRows(wrk_a,meeting[2], meeting[0], meeting[1], date);
     //wrk_a.push(meeting.slice(0,16));
     wrk_a.push(meeting);
   } else {
@@ -1033,38 +1039,66 @@ function getSchedWrkrRows(nm, hist, group, lvl, all_hours) {
 }
 
 
+
+
 function crtSchedTablRowPerDate(rows) {
-  let ar=[['day', ' ','8-9','9-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20','20-21','21-22']];
-  let trow=1;
-  let pdate=rows[0][0];
-  for (let i=0; i<rows.length;i++){
-    if (pdate != rows[i][0]){
-      trow++;
-      pdate=rows[i][0];
+  let header = ['day'];
+  let ar = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    let date = rows[i][0];
+    let time = rows[i][1] + '-' + rows[i][2];
+    let value = rows[i][3] + '/' + rows[i][4];
+
+    let rowIndex = ar.findIndex(row => row[0] === date);
+    if (rowIndex === -1) {
+      rowIndex = ar.push([date]) - 1;
     }
-    if (! ar[trow]){
-      ar[trow]=[rows[i][0], '','','','','','','','','','','','','','',''];
+
+    let columnIndex = header.findIndex(col => col === time);
+    if (columnIndex === -1) {
+      columnIndex = header.push(time) - 1;
     }
-    let val=rows[i][3]+'/'+rows[i][4];
-    let hr=rows[i][1];
-    let hfr=parseInt(rows[i][1]);
-    let hto=parseInt(rows[i][2])-1;
-    let col;
-    if (hr.match(/:00/) && rows[i][2].match(/:00/) && hfr==hto){
-    //if (hr.match(/:00/)){
-      col=parseInt(hr)-6;
-    } else {
-      val=hr+'-'+rows[i][2]+  ' : '+val;
-      //val=hr+  ' : '+val;
-      col=1;
-    }
-    ar[trow][col]=ar[trow][col] ? (ar[trow][col] + ', ' + val) : val;
+
+    ar[rowIndex][columnIndex] = ar[rowIndex][columnIndex] ? (ar[rowIndex][columnIndex] + ', ' + value) : value;
   }
-  //Logger.log('b femptycols ar='+JSON.stringify(ar));
-  let dc=findEmptyColumns(ar,1);
-  dropColumns(ar,dc);
-  return ar;
+
+  ar.unshift(header);
+
+  // Sort the columns based on the hours in the header row excluding 'day'
+  const headerRow = ar[0];
+  const sortedHeader = headerRow
+    .filter(col => col !== 'day') // Exclude 'day'
+    .sort((a, b) => {
+      const hourA = getHourFromTimeRange(a);
+      const hourB = getHourFromTimeRange(b);
+      return hourA.localeCompare(hourB, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
+  // Prepend 'day' to the sorted header
+  sortedHeader.unshift('day');
+  
+  const sortedIndices = sortedHeader.map(col => headerRow.indexOf(col));
+  const sortedColumns = ar.map(row => sortedIndices.map(i => row[i]));
+
+  // Fill empty cells with an empty string
+  sortedColumns.forEach(row => {
+    for (let i = 0; i < sortedHeader.length; i++) {
+      if (row[i] === undefined) {
+        row[i] = '';
+      }
+    }
+  });
+
+  return sortedColumns;
 }
+
+function getHourFromTimeRange(timeRange) {
+  const startTime = timeRange.split('-')[0].trim();
+  const hour = startTime.split(':')[0];
+  return hour;
+}
+
 
 
 function crtSchedTabl(rows) {
@@ -1739,7 +1773,11 @@ function addWrkrColorRows(rows, wrkr, rows2add){
   //Logger.log('wrkr='+JSON.stringify(wrkr));
   //Logger.log('b rows2add='+JSON.stringify(rows2add));
   if (!wrkr.name) { return;}
-  let win_formula=getWorkerByName(wrkr.name).win_formula;
+  let workr=getWorkerByName(wrkr.name);
+  if (!workr){
+    Logger.log('invalid worker='+wrkr.name);
+  }
+  let win_formula=workr.win_formula;  
   if (wrkr.first_lesson == null &&  win_formula != 'any_hour') {return;}
   if (win_formula == 'from1st_hour'){
     //Logger.log('wrkr win_formula');
