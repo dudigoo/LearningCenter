@@ -13,6 +13,35 @@ function getStuAr(s) {
   //Logger.log('**********stu='+s);
   return gp.all_pupils_map[s];
 }
+
+
+function addNewPupilsMain() {
+  collectParams();
+  let new_pupils_ss_id='1hZEe-Yb-a_m2od_Osorq-njdQw9z8kjJdRYyfee8r38';
+  new_pupils_ss=SpreadsheetApp.openById(new_pupils_ss_id);
+  var sheets=new_pupils_ss.getSheets();
+  let new_rows=[];
+  //for (let i=0;i<1;i++){
+  for (let i=0;i<sheets.length;i++){
+    let sh_nm=sheets[i].getName();
+    let level=sheets[i].getName().slice(-1);
+    Logger.log("level="+level);
+    let data=querySheet('select B,C,D,E,F,G,H,I,J,K,L,M', new_pupils_ss_id, sh_nm, 1);
+    if (! data.length){
+      continue
+    }
+    data.forEach((row) => {
+      if (row[11]){
+        level=row[11];
+      }
+      new_rows.push([level, row[0], "", 8, row[1], "","","","",row[6],row[8],row[2],row[3],row[4],row[5]])
+    });
+  }
+  let alfon_sh=getAlfonSS().getSheetByName('pupils');
+  alfon_sh.getRange(alfon_sh.getLastRow()+1, 1, new_rows.length, new_rows[0].length).setValues(new_rows);
+  checkLog();
+}
+
 /*
 function getHistRow(dt,teac,stu,subj) {//dt: str || [][] , teac: []
   if (!gp.all_maakav_rows){

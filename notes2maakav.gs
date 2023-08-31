@@ -228,6 +228,8 @@ function findWrkrErrs(vals, lnerrs) {
   if (vals.props[0] != 'לא הגיע' && vals.impression.length<1 &&  ! ['י','יא','יב'].includes(vals.level)){ lnerrs.push('שורה '+vals.row+': חסר ש.ב.')}
   if (vals.row==8 && vals.date==''){ lnerrs.push('שורה '+vals.row+': חסר תאריך')}
   let dt= new Date(vals.date);
+  let day = dowmap[dt.getDay().toString()];
+  //Logger.log('day='+day +' vals.dow='+vals.dow );
   //Logger.log('dt='+dt.toString() );
   if (dt.toString()=='Invalid Date'){
     //Logger.log('invalid' );
@@ -237,6 +239,10 @@ function findWrkrErrs(vals, lnerrs) {
     if (g_present_date.getTime() < dt.getTime()) { lnerrs.push('שורה '+vals.row+': תאריך בעתיד')}
     if (g_min_dt.getTime() > dt.getTime() && vals.note.substring(0,1) != '-' ) { 
       lnerrs.push('שורה '+vals.row+':  תאריך ישן מדי - לאישור הכנס - בתחילת טור פעילות')
+    }
+    if(day != vals.dow){
+      //Logger.log('got the err' );
+      lnerrs.push('שורה '+vals.row+':  תאריך לא מתאים ליום בשבוע')
     }
   }
   if (vals.note.length<1 && vals.props[0] != 'לא הגיע'){ lnerrs.push('שורה '+vals.row+': חסרה פעילות')}

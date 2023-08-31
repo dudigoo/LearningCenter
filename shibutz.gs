@@ -364,9 +364,9 @@ function tstclearRecurPastStartDate() {
 }
 
 function clearRecurPastStartDate() {
+  if (getRecurSh().getLastRow() < 2 ){ return}
   let yest=new Date();
   yest.setDate(yest.getDate() - 1);
-  let recur_rows2clear=[];
   let start_dts_rng=getRecurSh().getRange(2,17,getRecurSh().getLastRow()-1,1);
   let start_dt_ar=start_dts_rng.getValues();
 
@@ -405,7 +405,6 @@ function setRecurMeet(wrk_a,recur,rrow, date,oldall) {
   if (i>-1){ 
     //Logger.log('set Recur Meet i='+i+' setRecurMeet rec:' + rrow );//qqq
     //Logger.log('wrk_a[i] len b='+wrk_a[i].length + ' wrk_a[i]='+wrk_a[i]);
-    //Logger.log('wrk_a[i] len b='+wrk_a[i].length + ' wrk_a[i]='+wrk_a[i]);
     //wrk_a[i]=wrk_a[i].concat(recur.slice(4,16));
     wrk_a[i]=wrk_a[i].slice(0,4).concat(recur.slice(4,15)).concat([permanent,,'']);
     wrk_a[i][5]=setPermanentComment(wrk_a[i][5]);
@@ -413,20 +412,18 @@ function setRecurMeet(wrk_a,recur,rrow, date,oldall) {
   } else {
     //Logger.log('not in template but available'); //qqq
     let w=getWorkerByName(recur[3])
-    //let z=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,16)));
-    //Logger.log('z='+JSON.stringify(z));
-    //wrk_a.push(z);
     let is_avail=isWorkerAvailable(recur[3], date, recur[1], recur[2]);
     let ar=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,15)));
     let in_old=-2;
+    ar=ar.concat([permanent]);
     if (!is_avail){
-      ar=ar.concat([permanent,,'red']);
+      ar=ar.concat([ ,'red']);
+      //ar=ar.concat([permanent,,'red']);
       //Logger.log('recur len='+recur.length);
-      //writeLog('* Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur.slice(0,recur.length-1));
+      writeLog('* (red) Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur.slice(0,recur.length-1));
       in_old=findRecRow(oldall,recur.slice(1,4));
     }
     //Logger.log('in_old='+in_old);
-    //if (in_old>-1) { Logger.log(oldall[in_old][4])}
     let taken_care='טופל';
     if (in_old>-1 && oldall[in_old][4] == taken_care){//taken care by auditor => dont override
       ar[4]=taken_care;
@@ -447,10 +444,15 @@ function removeOverlapTmpltRows(wrk_a, wnm, frtm, totm, dt) {
     //Logger.log('ck i='+i+' wrk_a[i][15]='+wrk_a[i][15]+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
     if ( wrk_a[i][15] != permanent && wrk_a[i][2] == wnm && ((frtm >= wrk_a[i][0] && frtm <wrk_a[i][1]) || (totm > wrk_a[i][0] && totm <= wrk_a[i][1]))){
       //Logger.log('removing i='+i+' wrk_a[i][0]='+wrk_a[i][0]+' wrk_a[i][1]='+wrk_a[i][1]);
-      if (! wrk_a[i].slice(4,10).every(element => element === "") ) {
+      if ( wrk_a[i].slice(4,10).every(element => element === "") ) {
+        Logger.log('Date='+dt.toDateString()+' Dropped overlapping row: '+JSON.stringify(wrk_a[i]));
+        wrk_a.splice(i--,1);      
+      }
+      /*if (! wrk_a[i].slice(4,10).every(element => element === "") ) {
         writeLog('Date='+dt.toDateString()+' Dropped overlapping row: '+JSON.stringify(wrk_a[i]));
       }
       wrk_a.splice(i--,1);
+      */
     }
   }
 }
@@ -621,7 +623,7 @@ function addExistingMeeting(meeting, wrk_a, sh,date){
     //wrk_a.push(meeting.slice(0,16));
     wrk_a.push(meeting);
   } else {
-    writeLog('* Missing row for meeting. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
+    writeLog('*** Missing row for meeting. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
     //writeLog('* Missing row for meeting. sheet='+sh.getName()+' meeting:'+JSON.stringify(meeting));
   }
 }
@@ -943,7 +945,7 @@ function shibutsDateProgressMain() {
     Logger.log('rm gp.shib_dates='+gp.shib_dates);
     clearShibutzDates();
   }
-  let wrk_dts=[0,1,2,3];
+  let wrk_dts=[0,1,2,3,4];
   if (wrk_dts.includes(dts[3])  && ! getShibutzSS().getSheetByName(getDtShNm(dts[1]))){
     gp.shib_dates=dts[1];
     Logger.log('add gp.shib_dates='+gp.shib_dates);
@@ -1044,12 +1046,10 @@ function getSchedWrkrRows(nm, hist, group, lvl, all_hours) {
 function crtSchedTablRowPerDate(rows) {
   let header = ['day'];
   let ar = [];
-
   for (let i = 0; i < rows.length; i++) {
     let date = rows[i][0];
     let time = rows[i][1] + '-' + rows[i][2];
     let value = rows[i][3] + '/' + rows[i][4];
-
     let rowIndex = ar.findIndex(row => row[0] === date);
     if (rowIndex === -1) {
       rowIndex = ar.push([date]) - 1;
@@ -1059,10 +1059,8 @@ function crtSchedTablRowPerDate(rows) {
     if (columnIndex === -1) {
       columnIndex = header.push(time) - 1;
     }
-
     ar[rowIndex][columnIndex] = ar[rowIndex][columnIndex] ? (ar[rowIndex][columnIndex] + ', ' + value) : value;
   }
-
   ar.unshift(header);
 
   // Sort the columns based on the hours in the header row excluding 'day'
@@ -1083,7 +1081,7 @@ function crtSchedTablRowPerDate(rows) {
 
   // Fill empty cells with an empty string
   sortedColumns.forEach(row => {
-    for (let i = 0; i < sortedHeader.length; i++) {
+    for (let i = 1; i < sortedHeader.length; i++) {
       if (row[i] === undefined) {
         row[i] = '';
       }
@@ -1313,7 +1311,7 @@ let name='דדד עעעע';
 }
 
 function sendMailReminder(mail,msg, name) {
-  let body='הי '+ name+', <br>'+ ' בדוק שוב לפני התגבור ' +' <a href="https://script.google.com/macros/s/AKfycbx_IgEiqVnQs_xeY8vC_sCUz6ImIamuD0p47txM2XixTta7tYnS2SxaOG6PeVbyzVeSFw/exec">במערכת שעות</a>';
+  let body='הי '+ name+', <br>'+ ' בדקו שוב לפני התגבור ' +' <a href="https://script.google.com/macros/s/AKfycbx_IgEiqVnQs_xeY8vC_sCUz6ImIamuD0p47txM2XixTta7tYnS2SxaOG6PeVbyzVeSFw/exec">במערכת שעות</a>';
   //let body='הי '+ name+', <br>'+' בדוק שוב במערכת שעות לפני התגבור';
   let em={
         to: mail,
@@ -1362,6 +1360,16 @@ function remindMeeting(meet_ar) {
 
 function findAllGroupsSchedMistakesMain(){
   collectParams();
+  
+  writeLog('** Check worker overlaps');
+  findWorkerOvelappingMeetings("allDays");
+  writeLog('** Check recur worker overlaps');
+  findWorkerOvelappingMeetings("recur");
+  writeLog('** Find pupils with 2 lessons at the same time');
+  findPupilWith2LessonsSameTime();
+  writeLog('** Find invalid pupils names');
+  findInvalidPupilsNames(); 
+  
   let dts=getDtsOfSheetsToWorkOn(6, 1, 1);
   writeLog('** Find missing or double pupil');
   for (let i=0;i<dts.length;i++){
@@ -1377,14 +1385,7 @@ function findAllGroupsSchedMistakesMain(){
     findPupilWithoutSubj();
   }*/
   //return;
-  writeLog('** Check worker overlaps');
-  findWorkerOvelappingMeetings("allDays");
-  writeLog('** Check recur worker overlaps');
-  findWorkerOvelappingMeetings("recur");
-  writeLog('** Find pupils with 2 lessons at the same time');
-  findPupilWith2LessonsSameTime();
-  writeLog('** Find invalid pupils names');
-  findInvalidPupilsNames(); 
+  
   checkLog('mail', 'schedule mistakes',gp.shibutz_mail_to);
 }
 
