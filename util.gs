@@ -89,37 +89,10 @@ function fixMain(){
 } 
 
 function fixss(ss,file,folder,tabnm,tnm) {
-  var sh=ss.getSheetByName('lists');
- let ur='=importrange("https://docs.google.com/spreadsheets/d/1yrL132sLyUUzRruG5EzivGOk8uC88p7KPRC9NwAWI6A","low!t1:ac99")';
- sh.getRange(1,1).setValue(ur);
- var namedRanges = ss.getNamedRanges();
-for (var i = 0; i < namedRanges.length; i++) {
-  if (namedRanges[i].getName() == 'ז'){ 
-    let r=ss.getRange("lists!A2:A99");
-    namedRanges[i].setRange(r);  
-  }
-  if (namedRanges[i].getName() == 'ח'){ 
-    let r=ss.getRange("lists!B2:B99");
-    namedRanges[i].setRange(r);  
-  }
-  if (namedRanges[i].getName() == 'ט'){ 
-    let r=ss.getRange("lists!C2:C99");
-    namedRanges[i].setRange(r);  
-  }
-  if (namedRanges[i].getName() == 'י'){ 
-    let r=ss.getRange("lists!D2:D99");
-    namedRanges[i].setRange(r);  
-  }  
-  if (namedRanges[i].getName() == 'יא'){ 
-    let r=ss.getRange("lists!E2:E99");
-    namedRanges[i].setRange(r);  
-  }
-  if (namedRanges[i].getName() == 'יב'){ 
-    let r=ss.getRange("lists!F2:F99");
-    namedRanges[i].setRange(r);  
-  }
-}
- Logger.log(' tabnm');
+  var sh=ss.getSheetByName('12.10-11.11');
+  let val=sh.getRange('B43').getValue();
+  val=val.replace('סיגל פנחסי מנהלת','איל בוזגלו מנהל');
+  sh.getRange('B43').setValue(val);
 }
   
 

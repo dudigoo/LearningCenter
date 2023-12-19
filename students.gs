@@ -42,37 +42,44 @@ function addNewPupilsMain() {
   checkLog();
 }
 
-/*
-function getHistRow(dt,teac,stu,subj) {//dt: str || [][] , teac: []
-  if (!gp.all_maakav_rows){
-    let sh=getMaakavSS().getSheetByName('all');
-    gp.all_maakav_rows=sh.getRange(6564,1,sh.getLastRow()-6563,13).getValues();
-  }
-  let rows=[];
-  if (dt.constructor == Array){ // any teacher during the week
-    //Logger.log('stu='+stu+' subj='+subj+' dt='+JSON.stringify(dt));
-    for (let i=0;i<gp.all_maakav_rows.length;i++){
-      let e=gp.all_maakav_rows[i];
-      try{
-        let x=e[0].getTime();
-        if (e[0].getTime()>=gp.ab_sun_dt.getTime() && e[0].getTime()<gp.ab_sat_dt.getTime() && subj == e[1] && stu==e[5]){
-          rows.push(e);
-        }
-      }catch(er){
-        Logger.log('er='+er+' e='+e);
-        let g=e.getTime();
-      }
-    }
- 
-//    rows=gp.all_maakav_rows.filter(e => e[0].getTime()>=gp.ab_sun_dt.getTime() && e[0].getTime()<gp.ab_sat_dt.getTime() && subj == e[1] && stu==e[5]);
-  } else {
-    rows=gp.all_maakav_rows.filter(e => subj == e[1] && stu==e[5] && e[0].getTime()==dt.getTime());
 
+function addNewPupilsSubjLevelsMain() {
+  collectParams();
+  let all_pupils=getAlfonKids();
+  let mipui_first_row=230; //set line number of first new student, it will run untill the end
+  let maakav_sh=getMaakavSS().getSheetByName('mipuiNewKids21');
+  new_pupil_levels=maakav_sh.getRange(mipui_first_row,1,maakav_sh.getLastRow()-mipui_first_row+1,maakav_sh.getLastColumn()).getValues();
+  for (let i=0;i<new_pupil_levels.length;i++){
+    //if (! ['ז','ח','ט'].includes(new_pupil_levels[i][0] )){
+    //  continue;
+    //}
+    let the_pupil=all_pupils.find((e) => e[1]==new_pupil_levels[i][2]);
+    if (! the_pupil) {
+      writeLog(new_pupil_levels[i][2] + ' not found in alfon');
+      continue;
+    }
+    Logger.log("the_pupil="+the_pupil[1]);
+    the_pupil[15]='רמה:' + new_pupil_levels[i][4].substring(0,1);
+    let eng1=new_pupil_levels[i][6].substring(0,1);
+    if (['3','4','5'].includes(eng1)){
+      the_pupil[16]='הק:'+eng1;
+    } else if (['א','ב','ג'].includes(eng1)){
+      the_pupil[16]='רמה:'+eng1;
+    } else {
+      the_pupil[16]='רמה:' + ((eng1 =='A') ? 'א' : ((eng1=='B') ? 'ב' : 'ג'));
+    }
+    let heb1=new_pupil_levels[i][13];
+    the_pupil[17]='רמה:' + ((heb1>=3.5) ? 'א' : ((heb1>2)? 'ב' : 'ג'));
+    //if (i==1){break}
   }
-  //Logger.log('getHistRow rows='+rows);
-  return rows;
+  updateAllKids(all_pupils);
+  checkLog();
 }
-*/
+
+function updateAllKids(kids) {
+  let alfon_sh=getAlfonSS().getSheetByName('pupils');
+  alfon_sh.getRange(2,1,alfon_sh.getLastRow()-1,alfon_sh.getLastColumn()).setValues(kids);
+}
 
 function getHistRows(stu) {//stu: str  , subj: []
   if (!gp.all_maakav_rows){

@@ -5,6 +5,12 @@ var dowrmap={'א':'0', 'ב':'1', 'ג':'2', 'ד':'3', 'ה':'4','ו':'5','ז':'6'}
 var gv_wrkr_view_tab_color='#1129e9';
 var permanent="קבוע";
 
+function tstwrkdys() {
+  //Logger.log('locale 3='+gp.locale);
+  collectParams();
+  let wrk_dts=gp.shib_days_of_work.split(',').map((e) => parseInt(e)-1);
+  Logger.log('wrk_dts='+wrk_dts);}
+
 function tstArr() {
   //Logger.log('locale 3='+gp.locale);
   collectParams();
@@ -219,6 +225,19 @@ function updateShibSheetsMain() {
   checkLog('mail', 'schedule issue',gp.shibutz_mail_to);
 }
 
+
+function update5ShibSheetsFrom2Main() { 
+  collectParams();
+  updateShibSheetsWork(5,2);
+  checkLog('mail', 'schedule issue',gp.shibutz_mail_to);
+}
+
+function updateShibSheetsFrom2Main() { 
+  collectParams();
+  updateShibSheetsWork(25,2);
+  checkLog('mail', 'schedule issue',gp.shibutz_mail_to);
+}
+
 function updateShibSheetsWork(num,start_from) { 
   let dts=getDtsOfSheetsToWorkOn(num,start_from);
   Logger.log('dts.length='+dts.length);
@@ -243,7 +262,7 @@ function getDtsOfSheetsToWorkOn(limit, start_from, ret_sh_nm) {
   for (let i=0;i<shs.length;i++){
     //Logger.log('i='+i+' sh nm='+shs[i].getName());
     let res=isSheet2upadte(shs[i]);
-    //Logger.log('i='+i+' res='+res+' nm='+shs[i].getName());
+    Logger.log('i='+i+' res='+res+' nm='+shs[i].getName());
     if (res){
       counter++;
       if (counter < start_from) {continue;}
@@ -407,11 +426,15 @@ function setRecurMeet(wrk_a,recur,rrow, date,oldall) {
     //Logger.log('wrk_a[i] len b='+wrk_a[i].length + ' wrk_a[i]='+wrk_a[i]);
     //wrk_a[i]=wrk_a[i].concat(recur.slice(4,16));
     wrk_a[i]=wrk_a[i].slice(0,4).concat(recur.slice(4,15)).concat([permanent,,'']);
+    //Logger.log('wrk_a[i]='+wrk_a[i]);
     wrk_a[i][5]=setPermanentComment(wrk_a[i][5]);
-    //Logger.log('wrk_a[i] len a='+wrk_a[i].length );
   } else {
     //Logger.log('not in template but available'); //qqq
-    let w=getWorkerByName(recur[3])
+    let w=getWorkerByName(recur[3]);
+    if (! w){
+      writeLog('invalid worker in recur row '+rrow);
+    }
+    Logger.log('rrow='+rrow+' recur[3]='+recur[3]);
     let is_avail=isWorkerAvailable(recur[3], date, recur[1], recur[2]);
     let ar=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,15)));
     let in_old=-2;
@@ -610,7 +633,7 @@ function cpMeetings(oldall,old_sh, wrk_a,dt){
 
 function addExistingMeeting(meeting, wrk_a, sh,date){
   var i=findRecRow(wrk_a, meeting.slice(0,3))
-  Logger.log('dExistingMeet i='+i+' meeting='+meeting );
+  //Logger.log('dExistingMeet i='+i+' meeting='+meeting );
   if (i>-1){
     if (rowIsBusy(wrk_a,i)){
       writeLog('* Meeting wins a recur row. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
@@ -945,7 +968,10 @@ function shibutsDateProgressMain() {
     Logger.log('rm gp.shib_dates='+gp.shib_dates);
     clearShibutzDates();
   }
-  let wrk_dts=[0,1,2,3,4];
+  
+  let wrk_dts=gp.shib_days_of_work.split(',').map((e) => parseInt(e)-1);
+  Logger.log('wrk_dts='+wrk_dts);
+  //let wrk_dts=[0,1,2,3,4]; // days of week that the center works
   if (wrk_dts.includes(dts[3])  && ! getShibutzSS().getSheetByName(getDtShNm(dts[1]))){
     gp.shib_dates=dts[1];
     Logger.log('add gp.shib_dates='+gp.shib_dates);
@@ -978,7 +1004,7 @@ function getPrevNxtDates(current_dt) {
 }
 
 
-function expandGroup2members(ar,replace,from,to) {//from: 0 based, to: 0 based, exclusive 
+function expandGroup2membersAndMerge(ar,replace,fro,to) {//from: 0 based, to: 0 based, exclusive 
 // ar example=[["אב-חוה","חוה-מתמ","","","","",""]]
   let gs=getGroupsDict();
   //Logger.log('expandGroupmembers ar.length='+ar.length);
@@ -986,7 +1012,7 @@ function expandGroup2members(ar,replace,from,to) {//from: 0 based, to: 0 based, 
   for (let i=0;i<ar.length;i++){
     //Logger.log('i='+i+' ar[i].length='+ar[i].length);
     let merged='';
-    for (let c=from;c<to;c++){
+    for (let c=fro;c<to;c++){
       //Logger.log('i='+i+' c='+c);
       //Logger.log('ar[i][c]]='+ar[i][c]);
       //Logger.log('gs[ar[i][c]]='+gs[ar[i][c]]);
@@ -998,7 +1024,7 @@ function expandGroup2members(ar,replace,from,to) {//from: 0 based, to: 0 based, 
         merged += ar[i][c];
       }
     }
-    ar[i][from] = merged; 
+    ar[i][fro] = merged; 
   }
 }
 
@@ -1007,13 +1033,13 @@ function getSchedWrkrRows(nm, hist, group, lvl, all_hours) {
   let query;
   // all_hours=1;
   if (all_hours){
-    query='select A, B, C, D, F, G, H, I, J, K, L, M where S != "red"';
+    query='select A, B, C, D, F, G, H, I, J, K, L, M, N, O, P where S != "red"';
   } else {
-    query = 'select A, B, C, D, F, G, H, I, J, K, L, M where (F != "" or G !="" or H !="" or I !="" or J !="" or K !="" or L !="" or M !="" or N !="") and S != "red"';
+    query = 'select A, B, C, D, F, G, H, I, J, K, L, M, N, O, P where (F != "" or G !="" or H !="" or I !="" or J !="" or K !="" or L !="" or M !="" or N !="") and S != "red"';
   }
   let shnm='allDays';
   if (hist=='y'){
-    query = 'select A, B, C, D, F, G, H, I, J, K, L, M ';
+    query = 'select A, B, C, D, F, G, H, I, J, K, L, M, N, O, P ';
     query += nm ? (' where D = "'+nm+'"') : "";
     shnm='history';
   } else {
@@ -1027,10 +1053,11 @@ function getSchedWrkrRows(nm, hist, group, lvl, all_hours) {
   }
   let values = querySheet(query, gp.shibutz_file_id, shnm);
   //Logger.log('valx='+JSON.stringify(values) );
-  expandGroup2members(values,0,8,12);
+  expandGroup2membersAndMerge(values,0,8,15);
   //  Logger.log('valx2='+JSON.stringify(values) );
+  //values.forEach((e) => {if (e[3].startsWith('שרון')) { Logger.log('valx be='+JSON.stringify(e))} ;  });
   values.forEach(e => e.splice(9,99));
-  //Logger.log('valx3='+JSON.stringify(values) );
+  //values.forEach((e) => {if (e[3].startsWith('שרון')) { Logger.log('valx e='+JSON.stringify(e))} ;    });
   if (hist=='y'){
     //values.splice(0,values.length-1000);
     values.reverse();
@@ -1041,15 +1068,13 @@ function getSchedWrkrRows(nm, hist, group, lvl, all_hours) {
 }
 
 
-
-
 function crtSchedTablRowPerDate(rows) {
   let header = ['day'];
   let ar = [];
   for (let i = 0; i < rows.length; i++) {
     let date = rows[i][0];
     let time = rows[i][1] + '-' + rows[i][2];
-    let value = rows[i][3] + '/' + rows[i][4];
+    let value = rows[i][3] + '/' + rows[i][4] + (rows[i][6] ? ('/'+rows[i][6]) : '');
     let rowIndex = ar.findIndex(row => row[0] === date);
     if (rowIndex === -1) {
       rowIndex = ar.push([date]) - 1;
@@ -1137,7 +1162,7 @@ function getPupRows(nm,targetSheet) {
   let query = 'select A where B = "'+nm+'"';
   //let gs_a=querySheet(query,gp.pupil_alfon_id,'groups').shift();
   let gs_a=querySheet(query,gp.pupil_alfon_id,'groupPupil');
-  Logger.log('nm='+nm+' gs_a= '+JSON.stringify(gs_a));
+  //Logger.log('nm='+nm+' gs_a= '+JSON.stringify(gs_a));
   if (gs_a && gs_a.length){
     let a=gs_a.map(e => e[0]);
     a.push(nm);
@@ -1145,14 +1170,17 @@ function getPupRows(nm,targetSheet) {
     nm=a.join('|');
   }
   Logger.log('nm= '+nm);
- 
-  query = 'select A, B, C, F, D, G where (S != "red" and T matches ".*,('+nm+'),.*")';  
-  Logger.log('query= '+query);
+  const regex = new RegExp(','+nm+',');
+  query = 'select A, B, C, F, D, G, T where (S != "red" and T matches ".*,('+nm+'),.*")';  
+  //Logger.log('query= '+query);
   let values=[];
   for (let i=0;i<targetSheet.length;i++){
     //Logger.log('targetSheet[i]= '+targetSheet[i]);
     let val=querySheet(query, gp.shibutz_file_id, targetSheet[i],0);
     //Logger.log('val= '+val);
+    val.forEach((e) => {
+      e[6]=e[6].replace(regex,',').replace(/^,+/,'').replace(/,+$/,'').replace(/,+/, ',');
+    } );
     //xval.forEach(e => e.splice(0,0,targetSheet[i]));
     values=values.concat(val)
   }
@@ -1167,7 +1195,7 @@ function getPupilSched(pnm,mode) {
   out.name=pnm;
   out.found='y';
   let pm=getAllPupilsMap();
-  Logger.log('got bymail');
+  //Logger.log('got bymail');
   if (pm[pnm]){
     Logger.log(' nm='+out.name);
     //xlet dts=getDtsOfSheetsToWorkOn(7,1,1);
@@ -1365,12 +1393,14 @@ function findAllGroupsSchedMistakesMain(){
   findWorkerOvelappingMeetings("allDays");
   writeLog('** Check recur worker overlaps');
   findWorkerOvelappingMeetings("recur");
+  writeLog('** Check recur invalid workers');
+  findRecurInvalidWorkers();
   writeLog('** Find pupils with 2 lessons at the same time');
   findPupilWith2LessonsSameTime();
   writeLog('** Find invalid pupils names');
   findInvalidPupilsNames(); 
   
-  let dts=getDtsOfSheetsToWorkOn(6, 1, 1);
+  let dts=getDtsOfSheetsToWorkOn(6, 1, 1); // 6 days is enough
   writeLog('** Find missing or double pupil');
   for (let i=0;i<dts.length;i++){
     findDtSheetMistakes(dts[i]);
@@ -1449,6 +1479,21 @@ function findPupilWith2LessonsSameTime(){
     writeLog(meet3[i][0]+' pupil:'+ meet3[i][3]+' from:'+meet3[i][1]);
   }
 }
+function tstfindRecurInvalidWorkers(){
+  collectParams();
+  findRecurInvalidWorkers();
+}
+
+function findRecurInvalidWorkers(){
+  let last_row=getRecurSh().getLastRow();
+  let workers=getRecurSh().getRange(2,4,last_row-1,1).getValues().flat();
+  //let workrs_uniq=[... new Set(workers)];
+  workers.forEach((e, inx) => {
+    if (! getWorkerByName(e)) {
+      writeLog('name='+e+ ' line='+(inx+1)); 
+    };
+  })
+}
 
 function findWorkerOvelappingMeetings(sh_nm){
   let meet_a=querySheet("select A,B,C,D,Q,R where D != '' order by D,A,B,C",gp.shibutz_file_id,sh_nm,1);
@@ -1475,13 +1520,28 @@ function findDtSheetMistakes(shnm){
   }
 }
 
-function findDtSheetGroupMistakes(shib_sh_nm,time,clas,group){
-  writeLog('Checking sheet='+shib_sh_nm+' time='+time+' class='+clas+' group='+group);
-  let alfon_qry="select B where A='" +clas + "' and D="+group;
-  shib_dt_qry="select I,J,K,L,M,N where G='"+clas+"' and A='"+time+"'";
-  pupilSchedSheetMistakes(alfon_qry, shib_dt_qry, shib_sh_nm);
+function tst45(){
+  collectParams();
+  let clas='ט';
+  let time='18:00';
+  let shib_sh_nm='4 20/9/23';
+  //let shib_dt_qry="select N where G='"+clas+"' and A='"+time+"'";
+  let shib_dt_qry="select M where G='"+clas+"'";
+  //let shib_dt_qry="select I,J,K,L,M,N,O where G='"+clas+"' and A='"+time+"'";
+  let a2=[shib_dt_qry, gp.shibutz_file_id, shib_sh_nm];
+  let ar2=querySheet(a2[0],a2[1],a2[2],0);
+
+  Logger.log('ar2 nf='+ar2);
 }
 
+function findDtSheetGroupMistakes(shib_sh_nm,time,clas,group){
+  writeLog('Checking sheet='+shib_sh_nm+' time='+time+' class='+clas+' group='+group);
+  gp.shib_dow_to_check_missing_student=shib_sh_nm.substring(0,1);
+  let alfon_qry="select B where A='" +clas + "' and D="+group;
+  //shib_dt_qry="select K,L,M,N,O where G='"+clas+"' and A='"+time+"'";
+  shib_dt_qry="select I,J,K,L,M,N,O where G='"+clas+"' and A='"+time+"'";
+  pupilSchedSheetMistakes(alfon_qry, shib_dt_qry, shib_sh_nm);
+}
 
 function findPupilWithoutMathMain() {
   collectParams();
@@ -1511,8 +1571,11 @@ function rangeItemsNotInAnotherRangeMain() {
 function pupilSchedSheetMistakes(alfon_qry,shib_dt_qry,shib_sh_nm) {
   let a1=[alfon_qry, gp.pupil_alfon_id, "pupils"];
   let a2=[shib_dt_qry, gp.shibutz_file_id, shib_sh_nm];
-  let ar1=querySheet(a1[0],a1[1],a1[2],0);
-  let ar2=querySheet(a2[0],a2[1],a2[2],0);
+  let ar1=querySheet(a1[0],a1[1],a1[2],1);
+  let ar2=querySheet(a2[0],a2[1],a2[2],1);
+  //Logger.log('a2='+a2+ ' alfon_qry='+alfon_qry);
+  //Logger.log('ar2 nf='+ar2);
+  //Logger.log('ar2='+ar2.flat());
   let res=arItemsNotInAnotherAr(ar1.flat(), ar2.flat(), 1);
 }
 
@@ -1580,11 +1643,12 @@ function updateAllScheduleSheetsWindowsColorsWork() {
     // sh=SpreadsheetApp.openById('1-VZOYe-sITfOgkDFEWAewEKZKGlnY9yXRCFoRaw-v_g').getSheetByName('1 12/2/23');
     //Logger.log('color  dts[i]='+dts[i]+' shnm='+sh.getName());
     colorScheduleWindows(sh);
+    flagSheetPermanentMeetings(sh);
   }
 }
 
 function colorScheduleWindows(sh){
-  //Logger.log(' last row='+sh.getLastRow());
+  Logger.log(' last row='+sh.getLastRow());
   let rows=sh.getRange(2,1,sh.getLastRow()-1,18).getValues();
   red_rows=[];
   rows.forEach((e,i) => {
@@ -1595,7 +1659,7 @@ function colorScheduleWindows(sh){
   })
   //Logger.log('red_rows ='+JSON.stringify(red_rows));
   let result=getSchedRows2Color(rows);
-  //Logger.log('gotSchedRows2Color');
+  Logger.log('gotSchedRows2Color');
   //Logger.log('gotSchedRows2Color result ='+JSON.stringify(result));
   if (!result || ! result.color_rows.length) {
     return;
@@ -1648,7 +1712,7 @@ function analyseColorRanges(color_rows,last_row, red_color_rows){
       color_rng[2].push(rng_nm);
     }
   }
-  Logger.log('all4='+JSON.stringify(all));
+  //Logger.log('all4='+JSON.stringify(all));
   red_color_rows.forEach((e) => {
     all.push([e,e]);
   })
@@ -1691,6 +1755,11 @@ function getComplementAray(all,last_row){
 function flagPermanentMeetings(){
   let sh=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   collectParams();
+  flagSheetPermanentMeetings(sh);
+  checkLog();
+}
+
+function flagSheetPermanentMeetings(sh){
   let last_row=sh.getLastRow();
   let dow=dowmap[getDtObjFromTabNm(sh.getName()).getDay()];
   let recur_hash={};
@@ -1713,8 +1782,8 @@ function flagPermanentMeetings(){
     }
   })
   perm_rng.setValues(perm_rng_vals);
-  checkLog();
 }
+
 
 function getSchedRows2Color(rows){
   rows.forEach((e, i) => e.push(i));

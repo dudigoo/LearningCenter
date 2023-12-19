@@ -160,7 +160,6 @@ function addWorker(wrkr) {
   } else {
     writeLog('no hour report for worker type '+wtp);
   } 
-  if (wtp != 'ח'){
     try {
       Logger.log('viewer mail='+ wrkr.mail + ' fname='+get_shared_dir().getName());
       get_shared_dir().addViewer(wrkr.mail);   
@@ -168,7 +167,6 @@ function addWorker(wrkr) {
     } catch (e) {
       writeLog('addViewer err. e=' + e);
     }
-  }
   writeLog('Done='+wrkr.name);
 }
 

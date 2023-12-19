@@ -8,7 +8,7 @@ function cpMain() {
   collectParams(3);
   cpInit();
   let files_ar=[];
-  getFilesFromFoldersRecurse(files_ar, gp.w_folders_id_a, 'application/vnd.google-apps.spreadsheet', 1, 25);
+  getFilesFromFoldersRecurse(files_ar, gp.w_folders_id_a, 'application/vnd.google-apps.spreadsheet', 1, 125); //125
   Logger.log('files to cp2maakav='+files_ar.length);
   for (let i=0;i<files_ar.length;i++){
     let tnm = files_ar[i].getName();
@@ -33,7 +33,7 @@ function cpMain2() {
 
 function cpInit() {
   g_present_date = new Date();
-  let g_month_name_frmonth=gp.g_month_name.replace(/^.../,'').replace(/-.*$/,'') - 1;
+  let g_month_name_frmonth=gp.g_month_name.replace(/^\d+\./,'').replace(/-.*$/,'') - 1;
   g_min_dt = new Date();
   g_min_dt.setMonth(g_month_name_frmonth);
   g_min_dt.setDate(10);
@@ -62,6 +62,7 @@ function getMaakavSS() {
 }
 
 function cp2maakav(file,ss,w) {
+  //Logger.log(' w='+JSON.stringify(w)+' file='+file.getName()) ;
   w.worker_hours_url=file.getUrl();
   Logger.log(' person='+w.name + ' shnm='+gp.g_month_name) ;
   var sheet = ss.getSheetByName(gp.g_month_name);

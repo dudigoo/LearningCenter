@@ -149,6 +149,7 @@ function setTextDirection(sh,trow){
 
 function findTotalRow(sh){
   var lr=sh.getLastRow();
+  //Logger.log('sh='+sh.getName()+' parent='+sh.getParent().getName());
   var i=0;
   var trv=sh.getRange(lr-7,1,7,1).getValues();
   for (i=0;i<trv.length;i++){

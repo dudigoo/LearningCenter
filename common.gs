@@ -35,12 +35,22 @@ function arItemsNotInAnotherAr(ar1, ar2, flagDuplicates) {
       }
     }
     //Logger.log('found='+found+' el='+ar1[i]);
-    if (! found) {
+    if (! found && ! isStudentMarkedDismissed(ar1[i])) {
       writeLog('not in second array: '+ar1[i]);
     } else if (found>1){
       writeLog(found + ' times in second array: '+ar1[i]);
     }
   }
+}
+
+function isStudentMarkedDismissed(student) {
+  let stu_a=getStuAr(student);
+  //Logger.log('stu_a[18]='+stu_a[18]);
+  if (!stu_a) {return;}
+  if (stu_a[18].includes('זז'+gp.shib_dow_to_check_missing_student)){
+    return 'marked';
+  }
+  return;
 }
 
 function getFolderIdFilesRecursivly(fol_id,mime_typ,files_ar,max_depth, hours_modified) {//max_depth: dft=1 i.e not recurse
@@ -97,19 +107,6 @@ function getYMDStr(d) {
 }
 
 function querySheet(query,fid,shname,headers){
-  /*if (!gp.query_sh_ids) {
-    gp.query_sh_ids={};
-  }
-  if (!gp.query_ss_ids) {
-    gp.query_ss_ids={};
-  }
-  if (!gp.query_ss_ids[fid]) {
-    gp.query_ss_ids[fid]=SpreadsheetApp.openById(fid);
-  }
-  if (!gp.query_sh_ids[fid+shname]) {
-    gp.query_sh_ids[fid+shname]=gp.query_ss_ids[fid].getSheetByName(shname).getSheetId();
-  }*/
-  
   let hdrs= (headers == undefined) ? 1 : headers;
   let url = "https://docs.google.com/spreadsheets/d/" + fid + "/gviz/tq?sheet=" + shname + "&headers="+hdrs+"&tqx=out:csv&tq=" + encodeURIComponent(query);
   Logger.log('query='+query +' shname='+shname +' hdrs='+hdrs);
@@ -128,6 +125,7 @@ function querySheet(query,fid,shname,headers){
     vals.splice(0,hdrs);
     //vals.shift();
   }
+  //Logger.log('vals='+vals );
   return vals;
 }
 
@@ -275,7 +273,7 @@ function collectParams(col) {
   gp.shib_dt_sheet_nm = params[31][0];
   gp.shib_arrival_order_file_id = params[32][0];
   gp.quiz_find_invalid_name_exam_only = params[33][0];
-  gp.shib_windows_file_id = params[34][0];
+  gp.shib_days_of_work = params[34][0];
   //Logger.log('pms='+params[29]);
   //gp.ab_last_dt = params[29][0];
   //gp.dates_dmy_fmt = (gp.scripts_ss.getSpreadsheetLocale() == 'iw_IL') ? 'y' : '';
