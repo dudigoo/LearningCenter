@@ -262,7 +262,7 @@ function getDtsOfSheetsToWorkOn(limit, start_from, ret_sh_nm) {
   for (let i=0;i<shs.length;i++){
     //Logger.log('i='+i+' sh nm='+shs[i].getName());
     let res=isSheet2upadte(shs[i]);
-    Logger.log('i='+i+' res='+res+' nm='+shs[i].getName());
+    //Logger.log('i='+i+' res='+res+' nm='+shs[i].getName());
     if (res){
       counter++;
       if (counter < start_from) {continue;}
@@ -342,7 +342,7 @@ function getShibRecurAr() {
 
 function addRecurring(wrk_a,dt,oldall) {
   let dow=dt.getDay();
-  //Logger.log('addRecuring dt='+dt);
+  Logger.log('addRecuring dt='+dt);
   let leng=getShibRecurAr().length;
   for (let i=0;i<leng;i++){
     let recur_row=getShibRecurAr()[i];
@@ -434,23 +434,28 @@ function setRecurMeet(wrk_a,recur,rrow, date,oldall) {
     if (! w){
       writeLog('invalid worker in recur row '+rrow);
     }
-    Logger.log('rrow='+rrow+' recur[3]='+recur[3]);
+    //Logger.log('rrow='+rrow+' recur[3]='+recur[3]);
     let is_avail=isWorkerAvailable(recur[3], date, recur[1], recur[2]);
     let ar=recur.slice(1,4).concat([w.subj_popu].concat(recur.slice(4,15)));
     let in_old=-2;
     ar=ar.concat([permanent]);
+
+    let write_red_log;
     if (!is_avail){
       ar=ar.concat([ ,'red']);
       //ar=ar.concat([permanent,,'red']);
       //Logger.log('recur len='+recur.length);
-      writeLog('* (red) Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur.slice(0,recur.length-1));
+      write_red_log=1;
       in_old=findRecRow(oldall,recur.slice(1,4));
     }
     //Logger.log('in_old='+in_old);
-    let taken_care='טופל';
-    if (in_old>-1 && oldall[in_old][4] == taken_care){//taken care by auditor => dont override
-      ar[4]=taken_care;
+    if (in_old>-1 && (oldall[in_old][4] == gp.shib_lo_zamin)){//taken care by auditor => dont override
+      ar[4]=gp.shib_lo_zamin;
       ar=ar.fill('',5,15);
+    } else {
+      if (write_red_log){
+        writeLog('* (red) Cannot set recur. sheet='+date.toDateString()+' worker not available. recur row='+rrow+' recur='+recur.slice(0,recur.length-1));
+      }
     }
     wrk_a.push(ar);
     //Logger.log('wrk_a ='+JSON.stringify( wrk_a));    
@@ -488,7 +493,10 @@ function isWorkerAvailable(wnm, dt, frtm, totm) {
 }
 
 function findRecRow(wrk_a,key) {
-  //Logger.log('shnm='+sh.getName());
+  //Logger.log('key='+JSON.stringify(key));
+  if (!wrk_a ){
+    return -1;
+  }
   for (let i=0;i<wrk_a.length;i++){
     let wi=wrk_a[i];
     //Logger.log('i='+i+' wi[0]='+wi[0]+' key[0]='+key[0]);
@@ -545,7 +553,7 @@ function fillShibDt(date) {
   Logger.log('s fillTmRngs shnm='+shnm);
   fillTmRngs(wrk_a,dt, date);
   let oldall=getShRows(dt_sh);
-  Logger.log('s addRecurring');
+  Logger.log('s addRecurring'+' dt_sh='+dt_sh);
   addRecurring(wrk_a,dt,oldall);
   if (dtsh_exist){
     Logger.log('s cpMeetings');
@@ -621,8 +629,10 @@ function getShRows(sh){
 
 function cpMeetings(oldall,old_sh, wrk_a,dt){
   for (i=0;i<oldall.length;i++){
-    let ar=oldall[i].slice(5,11);
+    let ar=oldall[i].slice(4,11);
+    //Logger.log('cpmeet oldall[i][15]='+oldall[i][15]+ ' i='+i+ ' oldall[i[='+oldall[i]);
     if (ar.every(element => element === "") || oldall[i][15] == permanent){//skip empty or recur row. 
+      //Logger.log('ar contin='+JSON.stringify(ar));
       continue;
     }
     //Logger.log('i='+i);
@@ -635,7 +645,8 @@ function addExistingMeeting(meeting, wrk_a, sh,date){
   var i=findRecRow(wrk_a, meeting.slice(0,3))
   //Logger.log('dExistingMeet i='+i+' meeting='+meeting );
   if (i>-1){
-    if (rowIsBusy(wrk_a,i)){
+    if (rowIsBusy(wrk_a,i) && (meeting[4] != gp.shib_lo_zamin)){
+      //Logger.log('bmeeting wins wrk_a='+JSON.stringify(wrk_a[i]));
       writeLog('* Meeting wins a recur row. sheet='+sh.getName()+' meeting:'+meeting.slice(0,3)+ ' '+meeting.slice(4,14));
     }
     wrk_a[i]=meeting;
@@ -818,11 +829,11 @@ function loadZminutSh() {
     for (let i=0;i<gp.zmin_rngs.length;i++){
       //Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]);
       if (gp.zmin_rngs[i][8]){
-        Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]+' gp.zmin_rngs[i][8]='+gp.zmin_rngs[i][8]);//xx
+        //Logger.log(' gp.zmin_nms[i][0] ='+gp.zmin_nms[i][0]+' gp.zmin_rngs[i][8]='+gp.zmin_rngs[i][8]);//xx
         let ar=gp.zmin_rngs[i][8].toString().split(',');
         let time_ar=[];
         for (let j=0;j<ar.length;j++){
-          Logger.log('j='+j+' ar[j]='+ar[j]);
+          //Logger.log('j='+j+' ar[j]='+ar[j]);
           if (ar[j].length<6){
             writeLog('invalid unavail date='+ar[j]+ ' full='+gp.zmin_rngs[i][8]);
           } else {
@@ -1399,15 +1410,15 @@ function findAllGroupsSchedMistakesMain(){
   findPupilWith2LessonsSameTime();
   writeLog('** Find invalid pupils names');
   findInvalidPupilsNames(); 
-  
-  let dts=getDtsOfSheetsToWorkOn(6, 1, 1); // 6 days is enough
+  // skip over strict tests
+  /*let dts=getDtsOfSheetsToWorkOn(6, 1, 1); // 6 days is enough
   writeLog('** Find missing or double pupil');
   for (let i=0;i<dts.length;i++){
     findDtSheetMistakes(dts[i]);
   }
   let qry="select C,D,count(D)  group by C,D";
   let groups=querySheet(qry,gp.shib_arrival_order_file_id,"groupArrivalOrder",1);  
-  /*writeLog("** Find pupils w/o Math");
+  writeLog("** Find pupils w/o Math");
   let subj='מתמטיקה';
   for (let i=0;i<groups.length;i++){
     gp.shib_alldays_query="select T where H='"+groups[i][0]+"' and F='"+subj+"'";
@@ -1490,7 +1501,7 @@ function findRecurInvalidWorkers(){
   //let workrs_uniq=[... new Set(workers)];
   workers.forEach((e, inx) => {
     if (! getWorkerByName(e)) {
-      writeLog('name='+e+ ' line='+(inx+1)); 
+      writeLog('name='+e+ ' line='+(inx+2)); 
     };
   })
 }
@@ -1503,8 +1514,9 @@ function findWorkerOvelappingMeetings(sh_nm){
       let has_start_end=false;
       if (sh_nm == 'recur' && ((meet_a[i-1][4] && meet_a[i][5]) || ( meet_a[i][4] && meet_a[i-1][5] ))) {
         has_start_end=true;
+      } else {
+        writeLog('overlapping meeting: date='+ meet_a[i][0]+ ' worker='+meet_a[i][3]+" from="+meet_a[i-1][1]+' to='+meet_a[i-1][2]+" from2="+meet_a[i][1]+' to2='+meet_a[i][2]);
       }
-      writeLog('overlapping meeting: date='+ meet_a[i][0]+ ' worker='+meet_a[i][3]+" from="+meet_a[i-1][1]+' to='+meet_a[i-1][2]+" from2="+meet_a[i][1]+' to2='+meet_a[i][2]+(has_start_end ? ' has_start_end' : ''));
     }
   }
 }
@@ -1648,7 +1660,10 @@ function updateAllScheduleSheetsWindowsColorsWork() {
 }
 
 function colorScheduleWindows(sh){
-  Logger.log(' last row='+sh.getLastRow());
+  Logger.log(' last row='+sh.getLastRow()+' sh nm='+sh.getName());
+  if (sh.getLastRow()<2){
+    return;
+  }
   let rows=sh.getRange(2,1,sh.getLastRow()-1,18).getValues();
   red_rows=[];
   rows.forEach((e,i) => {
@@ -1761,6 +1776,9 @@ function flagPermanentMeetings(){
 
 function flagSheetPermanentMeetings(sh){
   let last_row=sh.getLastRow();
+  if (last_row<2){
+    return;
+  }
   let dow=dowmap[getDtObjFromTabNm(sh.getName()).getDay()];
   let recur_hash={};
   getShibRecurAr().forEach(e => {

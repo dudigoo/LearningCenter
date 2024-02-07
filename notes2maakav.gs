@@ -8,7 +8,7 @@ function cpMain() {
   collectParams(3);
   cpInit();
   let files_ar=[];
-  getFilesFromFoldersRecurse(files_ar, gp.w_folders_id_a, 'application/vnd.google-apps.spreadsheet', 1, 125); //125
+  getFilesFromFoldersRecurse(files_ar, gp.w_folders_id_a, 'application/vnd.google-apps.spreadsheet', 1, 500); //125
   Logger.log('files to cp2maakav='+files_ar.length);
   for (let i=0;i<files_ar.length;i++){
     let tnm = files_ar[i].getName();
@@ -19,16 +19,229 @@ function cpMain() {
     let w=getWorkerByName(tabnm);
     cp2maakav(files_ar[i],ss,w);
   }
+  Logger.log('logDailyHours start');
+  logDailyHours();
+  Logger.log('logDailyHours end');
+  compareWorkersDailyHoursSheets();
+  Logger.log('compareWorkersDailyHoursSheets end');
   mailLog('hreports2maakav')
 }
 
-function cpMain2() { 
-  //return; 
+
+function compareWorkersDailyHoursSheetToAtidSheetMain() {
+  collectParams();
+  compareWorkersDailyHoursSheets('atid');
+}
+
+function compareWorkersDailyHoursSheetsTst() {
   collectParams(3);
-  cpInit();
-  g_func2run='cp2maakav';
-  iterateMain();
-  mailLog('hreports2maakav')
+  compareWorkersDailyHoursSheets();
+}
+
+function getAtidDoneItem(worker, date) {
+  if (!gp.loaded_atid_done_hours_sheet){
+    gp.loaded_atid_done_hours_sheet= loadAtidDoneHoursSheet();
+  }
+  //Logger.log('w0rk='+worker+' date='+date);
+  if ( gp.loaded_atid_done_hours_sheet[worker]){
+    //Logger.log('found wrk');
+  } else { return ''}
+  if (  date in gp.loaded_atid_done_hours_sheet[worker]){
+    //Logger.log('found dt');
+  }
+  if (! gp.loaded_atid_done_hours_sheet[worker] || (! (date in gp.loaded_atid_done_hours_sheet[worker]))){
+    return '';
+  }
+  Logger.log('wrk='+worker+' date='+date);
+  Logger.log('gp.loaded_atid_done_hours_sheet[worker][date]='+gp.loaded_atid_done_hours_sheet[worker][date]);
+  return gp.loaded_atid_done_hours_sheet[worker][date];
+}
+
+function loadAtidDoneHoursSheet() {
+  getAllWorkers();
+  //Logger.log('all_wrkrs_by_name2='+JSON.stringify(gp.all_wrkrs_by_name2));
+  let folder = DriveApp.getFolderById(gp.atid_work_hours_dir_id);
+  let files = folder.getFiles();
+  let ss_file;
+  let file_id;
+  while (files.hasNext()) {
+    let file = files.next();
+    if (file.getMimeType() === 'application/vnd.google-apps.spreadsheet') {
+      ss_file=file;
+      file_id=ss_file.getId();
+      break;
+    }
+  }
+  if (! ss_file){ 
+    ss_file=convertXlsx2sheets(folder)[0];
+    file_id=ss_file.id;
+    Logger.log('ss_file id='+ss_file.id);
+  }
+  
+  let atid_ss = SpreadsheetApp.openById(file_id);
+  atid_ss.setSpreadsheetTimeZone("Asia/Jerusalem");
+  Logger.log('file name='+atid_ss.getName());
+  let atid_sh = atid_ss.getSheets()[0];
+  let atid_ar=atid_sh.getDataRange().getValues();
+  let atid_loaded_sheet={};
+  atid_ar.forEach((el, inx) => {
+    if (! inx || ! el[3]) {return}
+    Logger.log('inx='+inx+' el3='+el[3]);
+    //Logger.log(' nm02='+gp.all_wrkrs_by_name2[el[3]]);
+    //Logger.log(' nm2='+gp.all_wrkrs_by_name2[el[3]]['name']);
+    if (! atid_loaded_sheet[gp.all_wrkrs_by_name2[el[3]]['name']]){ 
+      atid_loaded_sheet[gp.all_wrkrs_by_name2[el[3]]['name']]={};
+    }
+    //Logger.log('el[8]='+el[8]);
+    if (! (el[5] in atid_loaded_sheet[gp.all_wrkrs_by_name2[el[3]]['name']])){
+      atid_loaded_sheet[gp.all_wrkrs_by_name2[el[3]]['name']][el[5]]=0;
+      //Logger.log('aded key='+el[5]);
+    }
+    atid_loaded_sheet[gp.all_wrkrs_by_name2[el[3]]['name']][el[5]] += el[8];
+  });
+  //Logger.log('loaded atid file'+ JSON.stringify(atid_loaded_sheet));
+  return atid_loaded_sheet;
+}
+
+function compareWorkersDailyHoursSheets(atid_type) {
+  let ss=SpreadsheetApp.openById(gp.workers_daily_hours_ss_id);
+  let list_sh=ss.getSheetByName('list');
+  let list_ar=list_sh.getRange(1,1,list_sh.getLastRow(),list_sh.getLastColumn()).getValues();
+  let done_sh; let done_ar; let adaptors;
+  if (! atid_type){
+    done_sh=ss.getSheetByName('done');
+    //Logger.log('did getSheetByName');
+    done_ar=done_sh.getRange(1,1,done_sh.getLastRow(),done_sh.getLastColumn()).getValues();
+    adaptors=getDoneCorrectInx(list_ar,done_ar);
+    Logger.log('adopters0='+JSON.stringify(adaptors[0]))
+    Logger.log('adopters1='+JSON.stringify(adaptors[1]))
+  }
+  for (let i=1;i<list_ar.length;i++){
+    for (let j=1;j<list_ar[0].length;j++){
+      //Logger.log("i="+i+' j='+j + ' adaptors[1][i]='+adaptors[1][i]+' adaptors[0][j]='+adaptors[0][j])
+      let done_item='';
+      if (! atid_type){
+        if (adaptors[1][i] && adaptors[0][j]){
+          done_item=done_ar[adaptors[1][i]][adaptors[0][j]];
+          //Logger.log('new done_item='+done_item);
+        }
+      } else {
+        done_item=getAtidDoneItem(list_ar[i][0], list_ar[0][j]);
+        Logger.log('2 atid list_ar[i][0]='+list_ar[i][0]+' list_ar[0][j]'+list_ar[0][j]);
+        Logger.log('atid done_item='+done_item);
+      }
+      let new_val=compareListAndDoneCell(list_ar[i][j], done_item);
+      //Logger.log('new_val='+new_val + ' i='+i+' j='+j);
+      if (new_val) {
+        list_ar[i][j]=new_val;
+      }
+    }
+  }
+  updateListSheet(list_ar);
+}
+
+function updateListSheet(list_ar) {
+  let ss=SpreadsheetApp.openById(gp.workers_daily_hours_ss_id);
+  ss.getSheetByName('list').getRange(1,1,list_ar.length,list_ar[0].length).setValues(list_ar);
+
+}
+
+function compareListAndDoneCell(list_item,done_item) {
+  if (! list_item && ! done_item){
+    return
+  }
+  if (!list_item){list_item=''}
+  let list_item_orig=list_item.toString().replace(/#.*$/,'');
+  //Logger.log('list_item_orig='+list_item_orig+ ' done_item='+done_item);
+  let done_item_orig=done_item.toString().replace(/#.*$/,'');
+  //Logger.log(' list_item_orig='+list_item_orig+' done_item_orig='+done_item_orig);
+  if ( done_item_orig != list_item_orig) {
+    done_item_orig = done_item_orig ? done_item_orig : 0;
+    list_item_orig = list_item_orig ? list_item_orig : 0;
+    let ret_val=list_item_orig+'#'+(Number(list_item_orig) - Number(done_item_orig));
+    //Logger.log(' ret_val='+ret_val);
+    return ret_val;
+  }
+  return list_item_orig;
+}
+
+function getDoneCorrectInx(list_ar,done_ar) {
+  let done_date_adaptor=[];
+  let j=1;
+  //Logger.log('list_ar='+JSON.stringify(list_ar));
+  for (let i=1;i<list_ar[0].length;i++){
+    for (;j<done_ar[0].length; j++){
+      //Logger.log('i='+i+' j='+j+ ' done_ar[0][j]='+done_ar[0][j]);
+      if (list_ar[0][i].getTime() == done_ar[0][j].getTime()) {
+        done_date_adaptor[i]=j
+        break;
+      } else if (list_ar[0][i].getTime() < done_ar[0][j].getTime()) {
+        j--;
+        break;
+      }
+    }
+  }
+  let done_nm_adaptor=[];
+  j=1;
+  for (let i=1;i<list_ar.length;i++){
+    for (;j<done_ar.length; j++){
+      if (list_ar[i][0] == done_ar[j][0]) {
+        done_nm_adaptor[i]=j
+        break;
+      }
+      if (list_ar[i][0] < done_ar[j][0]) {
+        j--;
+        break;
+      }
+    }
+  }  
+  return [done_date_adaptor, done_nm_adaptor];
+}
+
+function convertObjectTo2DArray(obj, all_dates) {
+    let people = Object.keys(obj).sort();
+    //Logger.log('all_dates='+JSON.stringify(all_dates));
+    let dates = Object.keys(all_dates).map((e) => new Date(e));
+    //Logger.log('dates='+JSON.stringify(dates));
+    dates.sort((a, b) => { 
+      if (a.getTime()>b.getTime()) {return 1}
+      if (a.getTime()<b.getTime()) {return -1}
+      return 0;
+    })
+    let array = [[''].concat(dates)];
+
+    for (let person of people) {
+        let row = [person];
+        for (let date of dates) {
+            row.push(obj[person][date] || '');
+        }
+        array.push(row);
+    }
+
+    return array;
+
+  }
+
+
+
+function logDailyHours() {
+  //Logger.log('obj='+JSON.stringify(gp.workers_days_hours));
+  let arr = convertObjectTo2DArray(gp.workers_days_hours, gp.workers_dates);
+  //Logger.log('arr='+JSON.stringify(arr));
+  let ss=SpreadsheetApp.openById(gp.workers_daily_hours_ss_id);
+  let sh=ss.getSheetByName('list');
+  if (!sh){
+    sh= ss.insertSheet();
+    sh.setName('list');
+    ss.moveActiveSheet(0);
+    sh.insertColumns(10, 40); 
+  }
+  sh.clear();
+  rows=arr.length;
+  cols=arr[0].length;
+  //Logger.log('rows='+rows+' cols='+cols);
+  sh.getRange(1,1,rows,cols).setValues(arr);
+  //compareWorkersDailyHoursSheets();
 }
 
 function cpInit() {
@@ -52,6 +265,8 @@ function cpInit() {
   g_maakav_sh=getMaakavSS().getSheetByName('all');
   gp.mail2admin_ar=[];
   gp.mail2educator_ar=[];
+  gp.workers_days_hours={};
+  gp.workers_dates={};
 }
 
 function getMaakavSS() {
@@ -130,6 +345,9 @@ function cpRowInfo(wrkr,rn,lnerrs, wrow, copied_ar, wrkr_rows2write) {
 
   let hours= vals.hours ? vals.hours : 0;
   prev2vals(vals,prev);
+  if (hours){
+    addHoursToWorkerDayHours(wrkr.name,vals,hours); // collect hours
+  }
   if (chekDupHours(hours,vals,lnerrs)){
     return;
   }
@@ -155,6 +373,17 @@ function cpRowInfo(wrkr,rn,lnerrs, wrow, copied_ar, wrkr_rows2write) {
     copied_ar[rn][0]='y';
     //Logger.log('copied row='+rn );
   }
+}
+
+function addHoursToWorkerDayHours(name,vals,hours){
+  if (! (name in gp.workers_days_hours)){
+    gp.workers_days_hours[name]={};
+  }
+  if (! (vals.date in gp.workers_days_hours[name])){
+    gp.workers_days_hours[name][vals.date]=0;
+  }  
+  gp.workers_days_hours[name][vals.date]+=hours;
+  gp.workers_dates[vals.date]=1;//collect all dates to sort later
 }
 
 function notifyEducator(vals,wrkr){
@@ -279,7 +508,8 @@ function pushVals2add(kid,vals,wrows2add){
   //Logger.log('adding dt='+vals.date+' vals='+ JSON.stringify(vals));
   let valsar=[vals.date, vals.subj, vals.note, vals.impression, vals.wrkr, 
             kid, vals.level, vals.group, '=ROW()', vals.hours];
-  valsar= valsar.concat(vals.props);
+  //valsar= valsar.concat(vals.props);
+  valsar= valsar.concat(vals.props.slice(0,3).concat([vals.frtm,vals.totm])); // frtmtotm
   if (! valsar[0]){
     writeLog('empty date: valsar='+JSON.stringify(valsar)+' vals='+JSON.stringify(vals));
     return 'empty date';
@@ -345,7 +575,7 @@ function prev2vals(vals,prev){
   if (! vals.date && prev.date) {vals.date=prev.date}
   if (! vals.frtm && prev.frtm) {vals.frtm=prev.frtm}
   if (! vals.totm && prev.totm) {vals.totm=prev.totm}
-  if (! vals.hours && prev.hours) {vals.hours=prev.hours}
+  if (! vals.hours && prev.hours) {vals.hours=prev.hours} //comment this row?
   if (! vals.level && prev.level) {vals.level=prev.level}
   if (! vals.subj && prev.subj) {vals.subj=prev.subj}
   //Logger.log('prev2vals dt='+vals.date+ ' vls='+JSON.stringify(vals));

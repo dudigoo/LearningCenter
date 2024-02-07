@@ -5,6 +5,27 @@ function fileHasOpenComment(file_id) {
   return items.find(e => e.status=='open');
 }
 
+function convertXlsx2sheets(folder) {
+    var files = folder.getFilesByType(MimeType.MICROSOFT_EXCEL);
+    let new_files=[];
+    while (files.hasNext()) {
+      var file = files.next();
+      Logger.log('fnm='+file.getName());
+      var ID = file.getId();
+      var xBlob = file.getBlob();
+      var newFile = { title : file.getName()+'_converted',
+                      parents: [{"kind": "drive#parentReference", "id": folder.getId()}],
+                      key : ID
+                    }
+      file = Drive.Files.insert(newFile, xBlob, {
+        convert: true
+      });
+      new_files.push(file);
+    }
+    Logger.log('num converted files='+new_files.length)
+  return new_files;
+}
+
 function ctst() {
   let ar=[];
   let fs=getFilesFromFoldersRecurse(ar,['1Io6uaaakK5zQ3LEu3A6494pJq72SA75P','1ZnEolURbvCFHo3ugo_P5x875GqYZmskD'],'application/vnd.google-apps.spreadsheet' ,1, 25);
@@ -53,7 +74,7 @@ function isStudentMarkedDismissed(student) {
   return;
 }
 
-function getFolderIdFilesRecursivly(fol_id,mime_typ,files_ar,max_depth, hours_modified) {//max_depth: dft=1 i.e not recurse
+function getFolderIdFilesRecursivly(fol_id, mime_typ, files_ar, max_depth, hours_modified) {//max_depth: dft=1 i.e not recurse
   let folder = DriveApp.getFolderById(fol_id);
   max_depth= max_depth ? max_depth:1;
   let cur_depth=1;
@@ -205,8 +226,11 @@ function collectParams(col) {
   if (! col){col=2};
   gp.colors={'off_white':'#fbf5f0', 'blue':'#98eded', 'green':'#98ed98', 'red':'#ecaa9d', 'light_grey':'#f3f3f3'};
   gp.log_msgs=[];
+  gp.workers_daily_hours_ss_id='1-eciALC3XlQs4T0Ps5p_0AQ7hRNExBwUOrqyhTId1oo';
+  gp.atid_work_hours_dir_id='1SONDpEOcWL81ira4s64eGn_M_6SEqUGP';
   //Logger.log('container_id='+gp.ms_container_id);
   let params = getScriptGlobalParams(col);
+  gp.shib_lo_zamin='לא זמין';
   gp.heb_year = params[0][0];
   gp.g_month_name = params[1][0];
   gp.monthly_thin = params[2][0];

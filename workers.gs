@@ -56,14 +56,16 @@ function delw() {
 }
 
 function getAllWorkers() {
-  ws={}; ws_by_mail={};
+  ws={}; ws_by_mail={};ws_by_name2={};
   var wa=getWorkersSh().getRange(2,1,getWorkersSh().getLastRow()-1,getWorkersSh().getLastColumn()).getValues();
   for (var i=0;i<wa.length;i++) {
     ws[wa[i][0]]=getWorker(0,wa[i]);
     ws_by_mail[wa[i][2]]=ws[wa[i][0]];
+    ws_by_name2[wa[i][3]]=ws[wa[i][0]];
   }
   gp.all_wrkrs=ws;
   gp.all_wrkrs_by_mail=ws_by_mail;
+  gp.all_wrkrs_by_name2=ws_by_name2;
 }
 
 function getWorkerByName(name){
@@ -308,7 +310,7 @@ function addMonthes(ss,w,addw){
     if (! addw || gp.sheet2show != gp.g_month_name_ar[i]){
       sheetProtection(new_sh, 3);
     }
-    clearAcademic(new_sh, w.typ);
+    //clearAcademic(new_sh, w.typ);
     Logger.log('created sheet=' + gp.g_month_name_ar[i]);
   }
   if (addw && gp.sheet2show != ''){
@@ -319,12 +321,12 @@ function addMonthes(ss,w,addw){
 
 }
 
-function clearAcademic(sh,typ) {
+/*function clearAcademic(sh,typ) {
   if (typ.substring(0,1) != 'מ'){
     sh.getRange('A41:E41').clearContent().clearFormat();
   }
 }
-
+*/
 function unshareWorkerSSMain(){
   collectParams();
   g_func2run='unshareWorkerSS';

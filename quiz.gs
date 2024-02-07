@@ -84,7 +84,7 @@ function findNoQuizPupilsWord(pps,quizs,pat) {
 
 function updateQuizResultsMain() {
   collectParams();
-  let changed_in_past_days=20;
+  let changed_in_past_days=30;
   //quiz_dir_id='1IPmlBkL_f5V7RxuewRH7Z50_SpaXLABK';
   let files_ar=[];
   let cur_all_quiz_sh=getMaakavSS().getSheetByName('allQuiz');
@@ -98,18 +98,27 @@ function updateQuizResultsMain() {
   }
     return 0;
   });
-  //getFolderIdFilesRecursivly(quiz_dir_id,'application/vnd.google-apps.spreadsheet' , files_ar, 100); // sheet last modofied not changed on submit so using form files 
-  getFolderIdFilesRecursivly(quiz_dir_id,'application/vnd.google-apps.form' , files_ar, 100);
+  getFolderIdFilesRecursivly(quiz_dir_id,'application/vnd.google-apps.spreadsheet' , files_ar, 100); // sheet last modofied not changed on submit so using form files 
+  //xyz getFolderIdFilesRecursivly(quiz_dir_id,'application/vnd.google-apps.form' , files_ar, 100);
   //Logger.log('files_ar '+files_ar);
   let dt= new Date();
   dt.setHours(dt.getHours()-26*changed_in_past_days);
+  let oldest_time=dt.getTime();
   Logger.log('ignore files modified earlier then '+dt);
   for (let i=0;i<files_ar.length;i++){
-    if (files_ar[i].getLastUpdated()<dt){
+    //Logger.log(' file '+files_ar[i].getName()+' modified='+files_ar[i].getLastUpdated());
+    let ret_obj=getLastResponseDate(files_ar[i]);
+    if (! ret_obj) {
+      continue
+    }
+    //Logger.log('file='+files_ar[i].getName()+ ' last_dt='+ret_obj.dt+' dt='+dt);
+    //if (files_ar[i].getLastUpdated() < dt){
+    if (! ret_obj.dt || ret_obj.dt.getTime() < oldest_time){
       continue;
     }
-    //xlet scores_ar=getScoresFromFile(SpreadsheetApp.open([i]));
-    let scores_ar=getScoresFromFile(SpreadsheetApp.openById(FormApp.openById(files_ar[i].getId()).getDestinationId()));
+    //Logger.log('work on '+files_ar[i].getName());
+    let scores_ar=getScoresFromFile(ret_obj.ss);
+    //xyz let scores_ar=getScoresFromFile(SpreadsheetApp.openById(FormApp.openById(files_ar[i].getId()).getDestinationId()));
     if (! scores_ar){
       continue;
     }    
@@ -124,6 +133,18 @@ function updateQuizResultsMain() {
     Logger.log('adding empty row');
   }
   cur_all_quiz_sh.getRange(2,1,cur_all_quiz_ar.length,cur_all_quiz_ar[0].length).setValues(cur_all_quiz_ar);
+}
+
+function getLastResponseDate(file) {
+  let ss= SpreadsheetApp.open(file);
+  let sh= ss.getSheets()[0];
+  let last_row = sh.getLastRow();
+  if (! last_row || last_row==1){
+    return
+  }
+  let value = sh.getRange(last_row, 1).getValue();
+  return {'dt':value, 'ss': ss};
+  //return value;
 }
 
 function replaceOldScoresWithNewScores(full_ar, replace_ar, comp_pos) {
@@ -145,20 +166,20 @@ function replaceOldScoresWithNewScores(full_ar, replace_ar, comp_pos) {
       }
     }
   }
-  Logger.log('group_first_position='+group_first_position+' group_last_position='+ group_last_position);
+  //Logger.log('group_first_position='+group_first_position+' group_last_position='+ group_last_position);
   if (! group_last_position){
     group_last_position=full_ar.length-1
   }
   let new_ar;
-  Logger.log('match_val='+match_val+'deleted='+group_first_position+ ' to:'+group_last_position+ ' added='+replace_ar.length);
+  //Logger.log('match_val='+match_val+'deleted='+group_first_position+ ' to:'+group_last_position+ ' added='+replace_ar.length);
   if (group_first_position==0){
-    Logger.log('group_first_position=zero group_last_position='+ group_last_position);
+    //Logger.log('group_first_position=zero group_last_position='+ group_last_position);
     new_ar=replace_ar.concat(full_ar.slice(group_last_position+1));
   } else if (group_last_position==(full_ar.length-1)) { 
     new_ar=full_ar.slice(0,group_first_position).concat(replace_ar);
-    Logger.log('group_last_position=full_ar.length group_last_position='+group_last_position);
+    //Logger.log('group_last_position=full_ar.length group_last_position='+group_last_position);
   } else { // middle
-    Logger.log('middle  group_first_position='+group_first_position+' group_last_position='+group_last_position);
+    //Logger.log('middle  group_first_position='+group_first_position+' group_last_position='+group_last_position);
     new_ar=full_ar.slice(0,group_first_position).concat(replace_ar).concat(full_ar.slice(group_last_position+1));
   }
   return new_ar;

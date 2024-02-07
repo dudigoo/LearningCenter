@@ -249,23 +249,6 @@ function getKidMerkazNm(str,level) {
   return(rnm);
 }
 
-function convertXlsx2sheets(folder) {
-    var files = folder.getFilesByType(MimeType.MICROSOFT_EXCEL);
-    while (files.hasNext()) {
-      var file = files.next();
-      Logger.log('fnm='+file.getName());
-      var ID = file.getId();
-      var xBlob = file.getBlob();
-      var newFile = { title : file.getName()+'_converted',
-                      parents: [{"kind": "drive#parentReference", "id": gp.mashov_scores_dir_id}],
-                      key : ID
-                    }
-      file = Drive.Files.insert(newFile, xBlob, {
-        convert: true
-      });
-    }
-
-}
 // for quiz triggers
 /*function setQuiztriggersMain() {
   collectParams();
