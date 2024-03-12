@@ -304,6 +304,24 @@ function collectParams(col) {
  
 }
 
+
+function subtractDroppedPupils(list,drop){
+  Logger.log('st subtractDroppedPupils ');
+  for (let j=0; j<6;j++){
+    for (let i=0; i<240;i++){
+      if (! list[i][j]) {
+        break
+      }
+      //Logger.log('test '+list[i][j]);
+      if (drop.includes(list[i][j])){
+        Logger.log('blocking '+list[i][j]);
+        list[i][j]='*חסום* '+list[i][j];
+      }
+    }
+  }
+  return list;
+}
+
 function chomp(raw_text){
   //Logger.log('raw_text='+raw_text);
   raw_text=raw_text.replace(/ *, */g, ',').replace(/,,/g, ',').replace(/  /g, ' ').replace(/[, ]+$/, '');

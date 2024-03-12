@@ -628,6 +628,9 @@ function getShRows(sh){
 }
 
 function cpMeetings(oldall,old_sh, wrk_a,dt){
+  if (!oldall){
+    return
+  };
   for (i=0;i<oldall.length;i++){
     let ar=oldall[i].slice(4,11);
     //Logger.log('cpmeet oldall[i][15]='+oldall[i][15]+ ' i='+i+ ' oldall[i[='+oldall[i]);

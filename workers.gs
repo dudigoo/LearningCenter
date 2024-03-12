@@ -129,6 +129,16 @@ function getHoursMasterFileSS() {
   return gp.master_ss;
 }
 
+function fixWorkerTypInHourReport(ss) {
+  let sh=ss.getSheetByName('name');
+  sh.getRange('C1').setValue('סוג');
+  //Logger.log('wrkrsug='+JSON.stringify(getWorkerByName(sh.getRange('B2').getValue())));
+  sh.getRange('C2').setValue(getWorkerByName(sh.getRange('B2').getValue()).typ);
+  sh=ss.getSheetByName('1.2-31.2');
+  sh.getRange('H5').setValue('=name!$C$2');
+
+} 
+
 function addWorker(wrkr) {
   wfname=fnm_pref + ' ' + gp.heb_year + ' ' + wrkr.name;
   Logger.log('adding ' + wrkr.name);
@@ -146,6 +156,7 @@ function addWorker(wrkr) {
       var sheet = ss.getSheetByName('name');
       sheet.getRange('B2').setValue(wrkr.name);
       sheet.getRange('A2').setValue(wrkr.tz);
+      sheet.getRange('C2').setValue(wrkr.typ);
       rmProtections(sheet);
       sheetProtection(sheet, 3);
 

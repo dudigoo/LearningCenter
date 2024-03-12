@@ -33,8 +33,8 @@ function fix_SS(file,folder) {
   
   if (func2run=='fixss'){
     fixss(ss,file,folder,tabnm,tnm);   
-  } else if (func2run=='shareWorkerSS') {
-    shareWorkerSS(ss,w);
+  } else if (func2run=='fixWorkerTypInHourReport') {
+    fixWorkerTypInHourReport(ss);
   } else if (func2run=='unshareWorkerSS') {
     unshareWorkerSS(ss,w);
   } else if (func2run=='switchActiveMonth') {

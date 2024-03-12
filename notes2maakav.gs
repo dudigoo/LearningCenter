@@ -22,7 +22,7 @@ function cpMain() {
   Logger.log('logDailyHours start');
   logDailyHours();
   Logger.log('logDailyHours end');
-  compareWorkersDailyHoursSheets();
+  //compareWorkersDailyHoursSheets(); we report once per month to atid so this function not needed now
   Logger.log('compareWorkersDailyHoursSheets end');
   mailLog('hreports2maakav')
 }
@@ -241,7 +241,11 @@ function logDailyHours() {
   cols=arr[0].length;
   //Logger.log('rows='+rows+' cols='+cols);
   sh.getRange(1,1,rows,cols).setValues(arr);
-  //compareWorkersDailyHoursSheets();
+  
+  //  total
+  let sh_tot=ss.getSheetByName('listTotal');
+  sh_tot.getRange("A1:CW250").clearContent();
+  sh_tot.getRange(1,1,rows,cols).setValues(arr);
 }
 
 function cpInit() {

@@ -12,48 +12,6 @@ let a2=findEmptyColumns(t,1);
   Logger.log('xd='+JSON.stringify( t));
 
    return;
-  let dts=SpreadsheetApp.openById('1SXIOfVl9K4eagWJ8HgcXAR2GAnRIh5IqT_4ptkJAHO4').getSheetByName('Form responses 1').getRange("K6").getValue();
-  let dt=new Date('7/4/22');
-  //let dts='3/7/22,10/7/22,20/7/22';
-  let x=isDtInRange(dt,0,0,dts);
-  Logger.log('x='+x);
-   return;
-  //Logger.log('d1='+d);return;
-  collectParams();
-  let a = getMeetingsWithRemind();
-  //let a=querySheet2(query,'1yrL132sLyUUzRruG5EzivGOk8uC88p7KPRC9NwAWI6A','groupPupil');
-   Logger.log('a:'+JSON.stringify(a));
-  //let d=SpreadsheetApp.openById('1aYDdx3zTQ2__HkRJIoK1NVnkzVzUf_KwzjPOtoE05BI').getSheetByName('recur').getRange(2,17,1,2).getValues()[0];
-
-  //let dt=getDtObj('25/4/22');
-  //let x=isDtInRng(dt,d[0],d[1]);
-  //Logger.log('x='+JSON.stringify(x));
- // d.setDate( d.getDate()+7)
-  //Logger.log('d1='+d);
-  //Logger.log('dx='+getYMDStr(d));
-
- // const offset = d.getTimezoneOffset()
-//d = new Date(d.getTime() - (offset*60*1000))
-  //Logger.log('d2='+d.toISOString().split('T')[0]);
-
-  //let x={'row2add':md,'name':nm,'sh2look':'allDays', 'sts':'ok'};
-  //let p=getShibRecurAr();
-  let level='ט';
-  //let ed=getPupilEducator(pupil,level);
-    //let q = getAlfonKids();
-    //let query = 'select A,B,C,D,E,F,G,H where A="יא" and D=1 and E="054-558-1233"';
-
-  //let query = 'select A,B where B="09-8664148"';
-  //let query = 'select A,B where 1=1';
-  //let a=querySheet(query,'115u0pg6db6muE-3raRAHppvsIRNcnUgRKeqxA8NIVKI','schoolTeachers');
-  //str.shift();
-  //let str='אב-חוה';
-  //let a=getPupilsInGroup(str);
-  //Logger.log('q='+lastUpdated );
-//  let b=a.join(',');
-  //Logger.log('a1='+b);
-
-
 }
 
 function tst6() {
@@ -82,19 +40,25 @@ function delSomeRows(ss) {
 }
 
 function fixMain(){
-  g_func2run='fixss';
+  g_func2run='fixWorkerTypInHourReport';
+  collectParams();
+  iterateMain();
+} 
 
+function fixWorkerTypInHourReportMain(){
+  g_func2run='fixWorkerTypInHourReport';
   collectParams();
   iterateMain();
 } 
 
 function fixss(ss,file,folder,tabnm,tnm) {
-  var sh=ss.getSheetByName('12.10-11.11');
-  let val=sh.getRange('B43').getValue();
-  val=val.replace('סיגל פנחסי מנהלת','איל בוזגלו מנהל');
-  sh.getRange('B43').setValue(val);
-}
-  
+  let sh=ss.getSheetByName('name');
+  sh.getRange('C1').setValue('סוג');
+  //Logger.log('wrkrsug='+JSON.stringify(getWorkerByName(sh.getRange('B2').getValue())));
+  sh.getRange('C2').setValue(getWorkerByName(sh.getRange('B2').getValue()).typ);
+  sh=ss.getSheetByName('1.2-31.2');
+  sh.getRange('H5').setValue('=name!$C$2');
+}  
 
 function removeCopyOfPrefix () {
     var foldremoveCopyOfPrefixer_id = '1DFR2AzqaDAEIOgTYfs-fLSjkJT_MmVGl'; 

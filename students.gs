@@ -14,6 +14,31 @@ function getStuAr(s) {
   return gp.all_pupils_map[s];
 }
 
+function updateShibBlockedStudentListsMain() {
+  collectParams();
+  let drop_list = getStudentDropList();
+  let lists_sh=SpreadsheetApp.openById(gp.shibutz_file_id).getSheetByName('lists');
+  let pupils=lists_sh.getRange(2,1,140,6).getValues();
+  let updated_pupils=subtractDroppedPupils(pupils,drop_list);
+  lists_sh.getRange(2,26,140,6).setValues(updated_pupils);
+}
+
+function getStudentDropList() {
+  //collectParams();
+  let sh=SpreadsheetApp.openById('1iHOwFNTLSNufd9Y6mQ6Z1XSUmHDdNcDcFrZ1hCBFoSw').getSheetByName('sheet1');
+  let rows=sh.getRange(2,1,sh.getLastRow()-1,sh.getLastColumn()).getValues();
+  let nw=Date.now();
+  let dropped_pupils=rows.filter((x) => {//Logger.log('nm='+ x[1]+' 19='+x[19])); 
+    if (x[6] && x[6].getTime()>nw){
+      return true;
+    } else {
+      return false;
+    }
+  }
+  ).map((x) => x[0])
+  Logger.log('dropped_pupils='+JSON.stringify(dropped_pupils));
+  return dropped_pupils;
+}
 
 function addNewPupilsMain() {
   collectParams();
