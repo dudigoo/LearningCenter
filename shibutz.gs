@@ -433,6 +433,7 @@ function setRecurMeet(wrk_a,recur,rrow, date,oldall) {
     let w=getWorkerByName(recur[3]);
     if (! w){
       writeLog('invalid worker in recur row '+rrow);
+      return;
     }
     //Logger.log('rrow='+rrow+' recur[3]='+recur[3]);
     let is_avail=isWorkerAvailable(recur[3], date, recur[1], recur[2]);

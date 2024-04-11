@@ -113,6 +113,7 @@ function copyPersonSheet(key) {
       m_nsheet.setName(tabnm);
       m_nsheet.getRange(5, 2).setValue(tsheet.getRange(5, 2).getValue());
       m_nsheet.getRange(5, 7).setValue(tsheet.getRange(5, 7).getValue());
+      m_nsheet.getRange(5, 8).setValue(tsheet.getRange(5, 8).getValue());
       try { 
         m_nsheet.deleteColumns(9, m_nsheet.getMaxColumns()-8);
       } catch (e) {

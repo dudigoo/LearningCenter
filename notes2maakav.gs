@@ -14,7 +14,7 @@ function cpMain() {
     let tnm = files_ar[i].getName();
     Logger.log(' tnm='+tnm);
     let ss = SpreadsheetApp.open(files_ar[i]);
-    Logger.log('ss name='+ss.getName());
+    //Logger.log('ss name='+ss.getName());
     let tabnm=tnm.replace(/^\S+ \S+ \S+ /, '');
     let w=getWorkerByName(tabnm);
     cp2maakav(files_ar[i],ss,w);
@@ -22,7 +22,7 @@ function cpMain() {
   Logger.log('logDailyHours start');
   logDailyHours();
   Logger.log('logDailyHours end');
-  //compareWorkersDailyHoursSheets(); we report once per month to atid so this function not needed now
+  //compareWorkersDailyHoursSheets(); we update once per month to atid so this function not needed now
   Logger.log('compareWorkersDailyHoursSheets end');
   mailLog('hreports2maakav')
 }
@@ -246,6 +246,33 @@ function logDailyHours() {
   let sh_tot=ss.getSheetByName('listTotal');
   sh_tot.getRange("A1:CW250").clearContent();
   sh_tot.getRange(1,1,rows,cols).setValues(arr);
+  clearNonTeacherAcademicFormula(sh_tot);
+}
+
+function clearNonTeacherAcademicFormula(sh_tot) {
+  sh_ar=sh_tot.getRange(2,1,sh_tot.getLastRow(),100).getValues();
+  aka_ar=[];
+  let veteran='מורה ותיק';
+  let i=0;
+  for (i=0; i<sh_ar.length;i++){
+    //Logger.log('i123='+i+' sh_ar[i][0]='+sh_ar[i][0]);
+    if (! sh_ar[i][0]) {
+      break;
+    }
+    //Logger.log('nm hash='+JSON.stringify(gp.all_wrkrs[sh_ar[i][0]]));
+    if (! gp.all_wrkrs[sh_ar[i][0]].typ.includes(veteran) ) {
+    //if (! gp.all_wrkrs[sh_ar[0]].typ.includes(veteran) ) {
+      aka_ar[i]=[""];
+      sh_ar[i][104]="";
+    } else {
+      let r=i+2;
+      aka_ar[i]=['=COUNTIF(B'+ r+ ':CZ'+ r+ ',">=3")+COUNTIF(B'+ r + ':CZ'+r + ',">=6")+COUNTIF(B' + r + ':CZ' + r +',">=9")'];
+      //sh_ar[i][104]='=COUNTIF(B'+ r+ ':CZ'+ r+ ',">=3")+COUNTIF(B'+ r + ':CZ'+r + ',">=6")+COUNTIF(B' + r + ':CZ' + r +',">=9")';
+      //sh_ar[104]='=COUNTIF(B6:CZ6,">=3")+COUNTIF(B6:CZ6,">=6")+COUNTIF(B6:CZ6,">=9")';
+    }
+  }
+  //Logger.log('aka_ar='+JSON.stringify(aka_ar));
+  sh_tot.getRange(2,105,i,1).setValues(aka_ar);
 }
 
 function cpInit() {
